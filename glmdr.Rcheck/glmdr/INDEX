@@ -1,0 +1,13 @@
+bigcategorical          Contingency Table Data
+catrec                  Contingency Table Data
+complete                Complete Separation Example of Agresti
+glmdr                   Exponential Family Generalized Linear Models
+                        Done Right
+inference               Exponential Family Generalized Linear Models
+                        Done Right
+predict.glmdr           Exponential Family Generalized Linear Models
+                        Done Right
+quadratic               Quadratic Logistic Regression Data
+quasi                   Quasi-Complete Separation Example of Agresti
+sports                  Sports League Table Data
+summary.glmdr           Summarizing Generalized Linear Model Fits

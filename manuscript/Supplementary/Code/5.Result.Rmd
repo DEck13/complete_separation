@@ -1,0 +1,237 @@
+---
+title: "Result"
+author: "Park, S, Eck, D.E., and Lipka, A.E."
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, message=FALSE, include=FALSE}
+library(arm)
+library(glmdr)
+library(brglm2)
+library(summarytools)
+library(tidyverse)
+library(binom)
+```
+
+
+# Data
+
+## Agresti
+
+### Inference 
+
+```{r}
+x <- c(10,20,30,40,60,70,80,90)
+y <- c(0,0,0,0,1,1,1,1)
+#plot(y~x, main="Agresti Example - Complete Separation")
+n <- length(x)
+glmdr_mod <- glmdr(y~x, family="binomial")
+glmdr_phat <- predict(glmdr_mod$om, type="response")
+mean(as.numeric(glmdr_phat >=0.5) == y) # 100%
+glmdr_wilson <- binom.confint(glmdr_phat,1,methods="wilson")[5:6]
+sum(glmdr_wilson[,2]-glmdr_wilson[,1]) #6.347605
+
+bayes_mod <- bayesglm(y~x,family="binomial")
+bayes_phat <- predict(bayes_mod,type="response")
+mean(ifelse(bayes_phat>=0.5,1,0) == y) # 100%
+bayes_wilson <- binom.confint(bayes_phat,1,methods="wilson")[5:6]
+sum(bayes_wilson[,2]-bayes_wilson[,1]) #6.627746
+
+```
+
+### Prediction (LOOV)
+
+
+```{r}
+glmdr_test <- matrix(NA,nrow=n,ncol=1)
+bayes_test <- matrix(NA,nrow=n,ncol=1)
+OLS_test <- matrix(NA,nrow=n,ncol=1)
+brglm_test <- matrix(NA,nrow=n,ncol=1)
+for(i in 1:n){
+  i<-5
+  train_x <- x[-i]
+  train_y <- y[-i]  
+  glmdr_mod <- glmdr(train_y~train_x,family="binomial")
+  bayes_mod <- bayesglm(train_y~train_x,family="binomial")
+  brglm_mod <- suppressWarnings(glm(train_y~train_x,family="binomial", method = "brglmFit"))
+  lm_mod <- lm(train_y~train_x)
+  test_x <- matrix(x[i])
+  test_y <- y[i]
+  glmdr_test[i,1] <- as.numeric((rowMeans(predict(glmdr_mod,test_x))>=0.5) == test_y)
+  bayes_test[i,1] <- as.numeric((predict(bayes_mod,newdata=data.frame("train_x" =test_x),type="response")>=0.5) == test_y)
+  brglm_test[i,1] <- as.numeric((predict(brglm_mod,newdata=data.frame("train_x" =test_x),type="response")>=0.5) == test_y)
+  OLS_test[i,1] <- as.numeric((predict(lm_mod,newdata=data.frame("train_x" =test_x))>=0.5) == test_y)
+}
+cbind(mean(glmdr_test),mean(bayes_test),mean(brglm_test),mean(OLS_test))
+```
+
+
+
+
+## Agresti Quasi
+
+```{r}
+x <- c(10,20,30,40,60,70,80,90,50,50)
+y <- c(0,0,0,0,1,1,1,1,0,1)
+#plot(y~x, main="Agresti Example - Quasi Complete Separation")
+n <- length(x)
+glmdr_mod <- glmdr(y~x, family="binomial")
+glmdr_CI <- inference(glmdr_mod)
+glmdr_phat <- predict(glmdr_mod$om, type="response")[!glmdr_mod$linearity]
+mean(as.numeric(glmdr_phat >=0.5) == y[!glmdr_mod$linearity]) # 100%
+glmdr_wilson <- binom.confint(glmdr_phat,1,methods="wilson")[5:6]
+sum(glmdr_wilson[,2]-glmdr_wilson[,1]) #6.347605
+
+bayes_mod <- bayesglm(y~x,family="binomial")
+bayes_phat <- predict(bayes_mod,type="response")[!glmdr_mod$linearity]
+mean(ifelse(bayes_phat>=0.5,1,0) == y[!glmdr_mod$linearity]) # 100%
+bayes_wilson <- binom.confint(bayes_phat,1,methods="wilson")[5:6]
+sum(bayes_wilson[,2]-bayes_wilson[,1]) #6.616894
+```
+
+### Prediction
+
+```{r}
+glmdr_test <- matrix(NA,nrow=n,ncol=1)
+bayes_test <- matrix(NA,nrow=n,ncol=1)
+OLS_test <- matrix(NA,nrow=n,ncol=1)
+brglm_test <- matrix(NA,nrow=n,ncol=1)
+for(i in 1:n){
+  i<-10
+  train_x <- x[-i]
+  train_y <- y[-i]  
+  glmdr_mod <- glmdr(train_y~train_x,family="binomial")
+  bayes_mod <- bayesglm(train_y~train_x,family="binomial")
+  brglm_mod <- suppressWarnings(glm(train_y~train_x,family="binomial", method = "brglmFit"))
+  lm_mod <- lm(train_y~train_x)
+  test_x <- matrix(x[i])
+  test_y <- y[i]
+  glmdr_test[i,1] <- as.numeric((rowMeans(predict(glmdr_mod,test_x))>=0.5) == test_y)
+  bayes_test[i,1] <- as.numeric((predict(bayes_mod,newdata=data.frame("train_x" =test_x),type="response")>=0.5) == test_y)
+  brglm_test[i,1] <- as.numeric((predict(brglm_mod,newdata=data.frame("train_x" =test_x),type="response")>=0.5) == test_y)
+  OLS_test[i,1] <- as.numeric((predict(lm_mod,newdata=data.frame("train_x" =test_x))>=0.5) == test_y)
+}
+cbind(mean(glmdr_test),mean(bayes_test),mean(brglm_test),mean(OLS_test))
+binom.confint(predict(bayes_mod,newdata=data.frame("train_x" =test_x),type="response"),1,methods="wilson")
+```
+
+## Fake_data_set
+
+```{r}
+data(quadratic)
+#with(quadratic,plot(y~x,main="quadratic Example"))
+glmdr_mod <- glmdr(y~x+I(x^2),data=quadratic,family="binomial")
+glmdr_CI <- inference(glmdr_mod)
+glmdr_phat <- predict(glmdr_mod$om, type="response")
+mean(as.numeric(glmdr_phat >=0.5) == quadratic$y) # 100%
+glmdr_wilson <- binom.confint(glmdr_phat,1,methods="wilson")[5:6]
+sum(glmdr_wilson[,2]-glmdr_wilson[,1]) #6.347605
+
+bayes_mod <- bayesglm(y~x+I(x^2),data=quadratic,family="binomial")
+bayes_phat <- predict(bayes_mod,type="response")
+mean(ifelse(bayes_phat>=0.5,1,0) == quadratic$y) # 100%
+bayes_wilson <- binom.confint(bayes_phat,1,methods="wilson")[5:6]
+sum(bayes_wilson[,2]-bayes_wilson[,1]) #24.70393
+```
+
+
+### Prediction
+
+```{r}
+n <- nrow(quadratic)
+glmdr_test <- matrix(NA,nrow=n,ncol=1)
+bayes_test <- matrix(NA,nrow=n,ncol=1)
+brglm_test <- matrix(NA,nrow=n,ncol=1)
+OLS_test <- matrix(NA,nrow=n,ncol=1)
+for(i in 1:n){
+  train_x <- quadratic$x[-i]
+  train_y <- quadratic$y[-i]  
+  glmdr_mod <- glmdr(train_y~train_x+I(train_x^2),family="binomial")
+  bayes_mod <- bayesglm(train_y~train_x+I(train_x^2),family="binomial")
+  brglm_mod <- suppressWarnings(glm(train_y~train_x+I(train_x^2),family="binomial", method = "brglmFit"))
+  lm_mod <- lm(train_y~train_x+I(train_x^2))
+  test_x <- matrix(c(quadratic$x[i],quadratic$x[i]^2),ncol=2)
+  test_y <- quadratic$y[i]
+  glmdr_test[i,1] <- as.numeric((rowMeans(predict(glmdr_mod,test_x))>=0.5) == test_y)
+  test_x = data.frame(test_x)
+  colnames(test_x) <- c("train_x","I(train_x^2)")
+  bayes_test[i,1] <- as.numeric((predict(bayes_mod,newdata=data.frame(test_x),type="response")>=0.5) == test_y)
+  brglm_test[i,1] <- as.numeric((predict(brglm_mod,newdata=data.frame(test_x),type="response")>=0.5) == test_y)
+  OLS_test[i,1] <- as.numeric((predict(lm_mod,newdata=data.frame(test_x))>=0.5) == test_y)
+}
+cbind(mean(glmdr_test),mean(bayes_test),mean(brglm_test),mean(OLS_test))
+```
+
+## Endometrial
+
+```{r}
+data(endometrial)
+#with(endometrial,plot(HG~NV,main="Endometrial Example"))
+
+glmdr_mod <- glmdr(HG~.,data=endometrial,family="binomial")
+glmdr_phat <- predict(glmdr_mod$om, type="response")[!glmdr_mod$linearity]
+mean(as.numeric(glmdr_phat >=0.5) == endometrial$HG[!glmdr_mod$linearity]) # 100%
+glmdr_wilson <- binom.confint(glmdr_phat,1,methods="wilson")[5:6]
+sum(glmdr_wilson[,2]-glmdr_wilson[,1]) #10.31486
+
+bayes_mod <- bayesglm(HG~.,data=endometrial,family="binomial")
+bayes_phat <- predict(bayes_mod,type="response")[!glmdr_mod$linearity]
+mean(ifelse(bayes_phat>=0.5,1,0) == endometrial$HG[!glmdr_mod$linearity]) # 100%
+bayes_wilson <- binom.confint(bayes_phat,1,methods="wilson")[5:6]
+sum(bayes_wilson[,2]-bayes_wilson[,1]) #10.44629
+
+```
+
+```{r}
+n <- nrow(endometrial)
+glmdr_test <- matrix(NA,nrow=n,ncol=1)
+bayes_test <- matrix(NA,nrow=n,ncol=1)
+brglm_test <- matrix(NA,nrow=n,ncol=1)
+OLS_test <- matrix(NA,nrow=n,ncol=1)
+for(i in 1:n){
+  train_x <- endometrial[-i,-4]
+  train_y <- endometrial[-i,4]  
+  glmdr_mod <- glmdr(HG~.,data=endometrial,family="binomial")
+  bayes_mod <- bayesglm(HG~.,data=endometrial,family="binomial") # algorithm did not converge
+  brglm_mod <- suppressWarnings(glm(HG~.,data=endometrial,family="binomial", method = "brglmFit"))
+  lm_mod <- lm(HG~.,data=endometrial)
+  test_x <- endometrial[i,-4]
+  test_y <- endometrial[i,4]
+  glmdr_test[i,1] <- as.numeric((rowMeans(predict(glmdr_mod,test_x))>=0.5) == test_y)
+  bayes_test[i,1] <- as.numeric((predict(bayes_mod,newdata=test_x,type="response")>=0.5) == test_y)
+  brglm_test[i,1] <- as.numeric((predict(brglm_mod,newdata=test_x,type="response")>=0.5) == test_y)
+  OLS_test[i,1] <- as.numeric((predict(lm_mod,newdata=test_x)>=0.5) == test_y)
+}
+cbind(mean(glmdr_test),mean(bayes_test),mean(brglm_test),mean(OLS_test))
+```
+
+## Maize data
+
+```{r}
+corn_dat <- readxl::read_xlsx("./Combined_Final_Product.xlsx")
+names(corn_dat)[c(10,8)] <- c("Kernel.color","Pop.structure")
+Xind <- 11:ncol(corn_dat)
+foo <- corn_dat[, c(10,8,Xind[-c(15,19,22,23,24)])] 
+foo$Pop.structure <- factor(foo$Pop.structure) 
+dat <- data.frame(foo)
+dat[,3:ncol(dat)] <- scale(dat[,3:ncol(dat)])
+glmdr_mod <- glmdr(Kernel.color~.,data=dat,family="binomial")
+glmdr_CI <- inference(glmdr_mod)
+glmdr_phat <- predict(glmdr_mod$om, type="response")[!glmdr_mod$linearity]
+mean(as.numeric(glmdr_phat >=0.5) == dat$Kernel.color[!glmdr_mod$linearity]) # 100%
+glmdr_wilson <- binom.confint(glmdr_phat,1,methods="wilson")[5:6]
+sum(glmdr_wilson[,2]-glmdr_wilson[,1]) #63.05511
+
+bayes_mod <- bayesglm(Kernel.color~.,data=dat,family="binomial")
+bayes_phat <- predict(bayes_mod,type="response")[!glmdr_mod$linearity]
+mean(ifelse(bayes_phat>=0.5,1,0) == dat$Kernel.color[!glmdr_mod$linearity]) # 98.65%
+bayes_wilson <- binom.confint(bayes_phat,1,methods="wilson")[5:6]
+sum(bayes_wilson[,2]-bayes_wilson[,1]) #60.22109
+
+```
+

@@ -1,0 +1,5 @@
+name	user	system	elapsed
+glmdr	0.185	0.013	0.204	
+inference	0.157	0.009	0.170	
+predict.glmdr	0	0	0	
+summary.glmdr	0.000	0.001	0.000	

@@ -1,0 +1,173 @@
+
+R version 3.6.1 (2019-07-05) -- "Action of the Toes"
+Copyright (C) 2019 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> pkgname <- "glmdr"
+> source(file.path(R.home("share"), "R", "examples-header.R"))
+> options(warn = 1)
+> base::assign(".ExTimings", "glmdr-Ex.timings", pos = 'CheckExEnv')
+> base::cat("name\tuser\tsystem\telapsed\n", file=base::get(".ExTimings", pos = 'CheckExEnv'))
+> base::assign(".format_ptime",
++ function(x) {
++   if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]
++   if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]
++   options(OutDec = '.')
++   format(x[1L:3L], digits = 7L)
++ },
++ pos = 'CheckExEnv')
+> 
+> ### * </HEADER>
+> library('glmdr')
+> 
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+> base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
+> cleanEx()
+> nameEx("glmdr")
+> ### * glmdr
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: glmdr
+> ### Title: Exponential Family Generalized Linear Models Done Right
+> ### Aliases: glmdr
+> 
+> ### ** Examples
+> 
+> # example of section 2.4 in Geyer (2009)
+> data(sports)
+> out <- glmdr(cbind(wins, losses) ~ 0 + ., family = "binomial", data = sports)
+> inference(out)
+       lower upper
+1  0.8931588     2
+2  1.2445760     2
+4  1.8863470     2
+7  1.8090130     2
+11 1.8863470     2
+16 1.9925828     2
+17 1.9702726     2
+18 1.9402317     2
+19 1.5263299     2
+20 1.6990874     2
+21 1.5263299     2
+22 1.9925828     2
+23 1.9702726     2
+24 1.9402317     2
+25 1.5263299     2
+26 1.6990874     2
+27 1.5263299     2
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("glmdr", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("inference")
+> ### * inference
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: inference
+> ### Title: Exponential Family Generalized Linear Models Done Right
+> ### Aliases: inference
+> 
+> ### ** Examples
+> 
+> data(sports)
+> out <- glmdr(cbind(wins, losses) ~ 0 + ., family = "binomial", data = sports)
+> inference(out)
+       lower upper
+1  0.8931588     2
+2  1.2445760     2
+4  1.8863470     2
+7  1.8090130     2
+11 1.8863470     2
+16 1.9925828     2
+17 1.9702726     2
+18 1.9402317     2
+19 1.5263299     2
+20 1.6990874     2
+21 1.5263299     2
+22 1.9925828     2
+23 1.9702726     2
+24 1.9402317     2
+25 1.5263299     2
+26 1.6990874     2
+27 1.5263299     2
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("inference", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("predict.glmdr")
+> ### * predict.glmdr
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: predict.glmdr
+> ### Title: Exponential Family Generalized Linear Models Done Right
+> ### Aliases: predict.glmdr
+> 
+> ### ** Examples
+> 
+> ## Not run: 
+> ##D mod <- glmdr(y~x, family="binomial")
+> ##D predict(mod, newdata = new_df, cirt="AICc")
+> ## End(Not run)
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("predict.glmdr", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("summary.glmdr")
+> ### * summary.glmdr
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: summary.glmdr
+> ### Title: Summarizing Generalized Linear Model Fits
+> ### Aliases: summary.glmdr
+> 
+> ### ** Examples
+> 
+> ## For examples see example(glmdr)
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("summary.glmdr", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> ### * <FOOTER>
+> ###
+> cleanEx()
+> options(digits = 7L)
+> base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+Time elapsed:  0.594 0.042 0.656 0 0 
+> grDevices::dev.off()
+null device 
+          1 
+> ###
+> ### Local variables: ***
+> ### mode: outline-minor ***
+> ### outline-regexp: "\\(> \\)?### [*]+" ***
+> ### End: ***
+> quit('no')
