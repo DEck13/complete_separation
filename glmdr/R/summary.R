@@ -66,19 +66,19 @@ summary.glmdr <- function(object, correlation = FALSE, symbolic.cor = FALSE,
         mycall[[1L]] <- quote(base::summary)
         sout <- eval(mycall, parent.frame())
         result <- list(overview =
-            c("MLE exists in Barndorff-Nielsen completion",
+            cat(paste("MLE exists in Barndorff-Nielsen completion",
             "it is conditional on components of the response",
             "corresponding to object$linearity == FALSE being",
-            "conditioned on their observed values"),
+            "conditioned on their observed values", sep="\n")),
             type = "lcm",
             summary = sout,
             linearity = object$linearity)
     } else {
         result <- list(overview =
-            c("MLE exists in Barndorff-Nielsen completion",
+            cat(paste("MLE exists in Barndorff-Nielsen completion",
             "it is completely degenerate",
             "the MLE says the response actually observed is the only",
-            "possible value that could ever be observed"),
+            "possible value that could ever be observed",sep="\n")),
             type = "degenerate",
             linearity = object$linearity)
     }

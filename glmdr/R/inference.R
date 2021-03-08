@@ -68,7 +68,7 @@ b_hin_cond_chker <- function(xi, alpha, nulls){
 #' data(sports)
 #' out <- glmdr(cbind(wins, losses) ~ 0 + ., family = "binomial", data = sports)
 #' inference(out)
-inference <- function(object, alpha = 0.05, eps=1e-10){
+inference <- function(object, alpha = 0.05, eps=1e-10, prediction=FALSE){
   linearity = object$linearity
   if(all(linearity == TRUE)){
     stop("MLE is not at infinity, use glm functionality for inferences.")
@@ -134,17 +134,37 @@ inference <- function(object, alpha = 0.05, eps=1e-10){
     hin <- function(x) (-1) * .hin(x)
     .hinjac <- match.fun(dg)
     hinjac <- function(x) (-1) * .hinjac(x)      
-    for (i in seq(along = bounds)) {
-      k<-i
+    if(prediction){
+      bounds <- rep(0,1)
+      k <- length(which(!linearity))
       aout <- nloptr(xi.start, eval_f = f, eval_grad_f = df, eval_g_ineq = hin, eval_jac_g_ineq = hinjac, 
-                    eval_g_eq = NULL, eval_jac_g_eq = NULL, opts = list(
-                      algorithm="NLOPT_LD_SLSQP",
-                      xtol_rel = eps, xtol_abs = eps,maxeval=10000))
+                     eval_g_eq = NULL, eval_jac_g_eq = NULL, opts = list(
+                       algorithm="NLOPT_LD_SLSQP",
+                       xtol_rel = eps, xtol_abs = eps,maxeval=10000))
       if (!(aout$status %in% c(-1,-2,-3,-5))){ 
-        bounds[i] <- aout$objective
+        bounds <- aout$objective
+        y <- y[length(y)]
       } 
       else{
-        stop(aout$message)
+        print(aout$message)
+        bounds <- y[length(y)]
+        y <- y[length(y)]
+      }
+    }
+    else{
+      for (i in seq(along = bounds)) {
+        k<-i
+        aout <- nloptr(xi.start, eval_f = f, eval_grad_f = df, eval_g_ineq = hin, eval_jac_g_ineq = hinjac, 
+                       eval_g_eq = NULL, eval_jac_g_eq = NULL, opts = list(
+                         algorithm="NLOPT_LD_SLSQP",
+                         xtol_rel = eps, xtol_abs = eps,maxeval=10000))
+        if (!(aout$status %in% c(-1,-2,-3,-5))){ 
+          bounds[i] <- aout$objective
+        } 
+        else{
+          print(aout$message)
+          bounds <- y[i]
+        }
       }
     }
     bounds <- ifelse2(model_type,ifelse(y.int == max.rows, bounds, - bounds),ifelse(y == 1, bounds, - bounds))

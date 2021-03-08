@@ -138,7 +138,7 @@ make.mlogl <- function(modmat, response, offset, family)
 newton <- function(beta, mlogl)
 {
     mout <- mlogl(beta)
-    step.newt <- solve(mout$hessian, - mout$gradient)
+    step.newt <- solve(mout$hessian, - mout$gradient) # no need to be computed, try 1 or offset, random point of modmat
 
     prev.grad <- sum(mout$gradient * step.newt)
 
@@ -147,26 +147,18 @@ newton <- function(beta, mlogl)
             " skipping line search in Newton direction")
         return(beta)
     }
-
     linesearchfun <- function(s) {
          mout <- mlogl(beta + s * step.newt)
          sum(mout$gradient * step.newt)
     }
-
     i <- 0
     repeat {
-
         # do maximum of 20 times Newton step
         if (i == 20) break
-
         next.grad <- linesearchfun(i + 1)
-
         if (next.grad >= 0) break
-
         if (next.grad - prev.grad <= 0) break
-
         i <- i + 1
-
         prev.grad <- next.grad
     }
 
@@ -271,16 +263,16 @@ newton <- function(beta, mlogl)
 #' out <- glmdr(cbind(wins, losses) ~ 0 + ., family = "binomial", data = sports)
 #' inference(out)
 glmdr <- function(formula, family = c("binomial", "poisson"), data,
-    subset, na.action, offset, contrasts = NULL)
+                     subset, na.action, offset, contrasts = NULL)
 {
     call <- match.call()
     family <- match.arg(family)
-
+    
     # call stats::glm with the same arguments as this call
     # except we want
     #     family = family
     #     x = TRUE
-
+    
     call.glm <- call
     call.glm$family <- family
     call.glm$x <- TRUE
@@ -291,72 +283,88 @@ glmdr <- function(formula, family = c("binomial", "poisson"), data,
     # has been translated to a different language"
     # http://r.789695.n4.nabble.com/Suppress-specific-warnings-td4664591.html
     gout <- withCallingHandlers(eval(call.glm, parent.frame()),
-        warning = function(w)
-            if(grepl("fitted .* numerically 0.*occurred", w$message) ||
-                grepl("algorithm did not converge", w$message))
-                    invokeRestart("muffleWarning"))
-
+                                warning = function(w)
+                                    if(grepl("fitted .* numerically 0.*occurred", w$message) ||
+                                       grepl("algorithm did not converge", w$message))
+                                        invokeRestart("muffleWarning"))
+    
     # extract model matrix, response vector, and offset vector
     modmat <- gout$x
     #y <- gout$y
     mf <- model.frame(gout)
     resp <- model.response(mf)
     offs <- model.offset(mf)
-
+    
     # have to deal with dropped predictors
     outies <- is.na(coefficients(gout))
     modmat.drop <- modmat[ , ! outies]
     beta.drop <- coefficients(gout)[! outies]
-
+    
     # do one newton-with-line-search iteration
     # or should we do more?
-
     mlogl <- make.mlogl(modmat.drop, resp, offs, family)
-    beta.drop <- newton(beta.drop, mlogl)
-
+    
+    tryCatch({
+        beta.drop <- newton(beta.drop, mlogl)
+    }, error=function(e){
+        tmp_f <- function(xi) {
+            theta <- modmat %*% xi
+            logp <- ifelse(theta < 0, theta - log1p(exp(theta)), - log1p(exp(- theta)))
+            logq <- ifelse(theta < 0, - log1p(exp(theta)), - theta - log1p(exp(- theta)))
+            logpboundary <- ifelse(resp == 1, logp, logq)
+            -sum(logpboundary)
+        }
+        beta.drop <- nloptr(coefficients(gout)[! outies], eval_f = tmp_f,opts = list(
+            algorithm="NLOPT_LN_COBYLA",
+            xtol_rel = 10^-50, xtol_abs = 10^-50,maxeval=10000))$solution
+    })
+    beta.drop <- beta.drop
     mout <- mlogl(beta.drop)
     fish <- mout$hessian
     eout <- eigen(fish, symmetric = TRUE)
-
     # use fixed tolerance
     # or should we make this an optional argument?
     # or should multiply by max(eout$values) ?? (if large) !!
     is.zero <- eout$values < (.Machine$double.eps)^(5 / 8)
-
+    
     if (! any(is.zero)) {
         # nothing left to do
         # MLE exists in the conventional sense
         return(structure(list(om = gout), class = "glmdr"))
     }
-
+    
     if (all(is.zero)) {
         # nearly nothing left to do
         # LCM is completely degenerate
         linearity <- rep(FALSE, nrow(modmat))
         return(structure(list(om = gout, linearity = linearity, 
-            modmat = modmat.drop, family = family, y = resp),
-            class = "glmdr"))
+                              modmat = modmat.drop, family = family, y = resp),
+                         class = "glmdr"))
     }
-
+    
     # at this point we have some but not all zero eigenvalues
     ## Need to make decision tolerance streamlined
     nulls <- eout$vectors[ , is.zero, drop = FALSE]
     nulls.saturated <- modmat.drop %*% nulls
-
+    
     # use same tolerance here as above
     # or different?
     linearity <- apply(abs(nulls.saturated), 1, max) <
         (.Machine$double.eps)^(3 / 4)
-
+    
     # now we need to do the MLE for the LCM
     # call glm again
-
     call.glm$subset <- rownames(modmat)[linearity]
-    gout.lcm <- eval(call.glm, parent.frame())
-
+    gout.lcm <- NULL
+    if(any(linearity==TRUE)){
+        tryCatch({
+            gout.lcm <- eval(call.glm, parent.frame())  
+        }, error=function(e){
+            gout.lcm <- NULL
+        })
+    }
     return(structure(list(om = gout, lcm = gout.lcm,
-        linearity = linearity, nulls = nulls, modmat = modmat.drop, 
-        family = family, y = resp), 
-        class = "glmdr"))
+                          linearity = linearity, nulls = nulls, modmat = modmat.drop, 
+                          family = family, y = resp), 
+                     class = "glmdr"))
 }
-
