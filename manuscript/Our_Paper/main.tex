@@ -1,0 +1,160 @@
+\documentclass[11pt]{extarticle}
+
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage[utf8]{inputenc}
+\usepackage{import}
+\usepackage{comment}
+\usepackage{mathtools}
+\usepackage{dirtytalk}
+\usepackage{xcolor}
+ \usepackage{multirow}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage[round]{natbib}
+\makeatletter
+\newcommand{\bianca}{\renewcommand\NAT@open{[}\renewcommand\NAT@close{]}}
+\makeatother
+\newcommand*\sqcitep[1]{{\bianca\citep{#1}}}
+\usepackage{graphicx}
+\usepackage{subfig}
+
+\newtheorem{thm}{Theorem}
+\newcommand{\Gamlim}{$\Gamma_{\text{lim} \text{ }}$}
+\newenvironment{commentline}[1]{
+\noindent{\color{red} \rule{\linewidth}{0.5mm}}
+\textbf{Comment}: #1
+
+\noindent{\color{red} \rule{\linewidth}{0.5mm}}
+}
+
+\title{\textbf{Title}}
+\author{Suyoung Park, Daniel Eck, and Alex Lipka\\
+\emph{University of Illinois at Urbana-Champaign}}
+\date{Month 2021}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+    Space for the Abstract.    
+\end{abstract}
+\smallskip
+\noindent \textbf{Key Words:} list of keywords
+
+%% LEFT OVER %%
+
+\section{Material}
+
+We implemented our methodology in R package $\textbf{glmdr}$. We used R version 3.6.1 and the required R packages for $\textbf{glmdr}$ are $\textbf{binom}$ version 1.1 and $\textbf{nloptr}$ version 1.2.2.2. Further details are included in the technical reports.
+
+\section{Method}
+
+\subsection{Logistic Regression}
+The logistic regression is the special case of the generalized linear model which the response variable follows Bernoulli distribution (i.e., $y \in \{0,1\}$) \sqcitep{GLM_paper}. By convention, we encode 1 as a ``success" and 0 as a ``failure." We model the conditional probability of observing one (success) given $x$:
+
+\begin{equation}\label{logistic_model}
+\text{Pr}(Y_i = 1 | X_i=x_i) = p_i = \frac{\exp{(x_i^{T}\beta)}}{1+\exp{(x_i^{T}\beta)}},
+\end{equation}
+where $\beta$ is unknown parameters.
+
+From the linear regression's point of view, this logistic regression is equivalent to:
+\begin{equation}\label{link_function}
+g(p_i) = \log(\frac{p_i}{1-p_i}) = x_i^T\beta
+\end{equation}
+where $g(x) = \log(\frac{x}{1-x})$ is a logit link (log-odds ratio).
+
+Therefore, like an ordinary least squares (OLS), we can estimate $\beta$ using the score function and make a statistical inference using diagonal elements of the inverse of the Fisher information, which represent the estimated variance of parameters.
+
+Specifically, given log-likelihood function of the logistic regression model,
+\begin{equation}\label{likelihood}
+\log L(\beta|Y) = \sum_{i=1}^{n} y_i\log{(p_i)} + (1-y_i)\log{(1-p_i)},
+\end{equation}
+the score function is:
+\begin{equation}\label{logit_Score}
+\frac{\partial \log{L(\beta|Y)}}{\partial \beta} = 
+\sum_{i=1}^{N} (y_i - \log{(p_i)}) X_i =
+\sum_{i=1}^{N} [y_i + \log{(1+\exp{(-x_i\beta)})}] = 0,
+\end{equation}
+and the variance-covariance matrix is the inverse of the Fisher information:
+\begin{equation}\label{logit_Fisher}
+\widehat{\text{Var}(\beta)} = [I(\beta)]^{-1} = \left[-E[\frac{\partial^2 \log{L(\beta|Y)}}{\partial \beta_i \partial \beta_j}]\right]^{-1}.
+\end{equation}
+
+\subsection{Mean-value Parameters}
+From the statistical model, what we actually want to know is the expected value of response variable given data. In the logistic regression, $\text{E}(Y|X=x) = \text{Pr}(Y = 1 | X=x)$, meanwhile, $\text{E}(Y|X=x) = x^{T}\beta$ for the linear regression. Hence, unlike the linear model, an interpretation on $\beta$ from the logistic model is difficult because our response variable is log-odds ratio rather than the probability of a success. For example, we can say that as one unit of explanatory variable increases the expected change in log odds ratio of conditional probability of success is $\beta$. However, it is not very intuitive and informative. To overcome this, we can consider a mean-value parameterization. Instead of directly using the estimated coefficients of the logistic regression model, we can obtain the probability of success given data by plugging in $\hat{\beta}$ into 
+\eqref{logistic_model}.
+
+\subsection{Complete Separation}
+From authoritative textbook [\citeauthor{agresti_categorical_2013}, \citeyear{agresti_categorical_2013}, Section 6.5.1], complete separation is defined as there exists a vector $\beta$ such that
+
+
+\begin{equation}\label{definition_complete_separation}
+\begin{split}
+x_{i}^{T} \beta &> 0 \text{ whenever } y_i = 1, \\
+x_{i}^{T} \beta &< 0 \text{ whenever } y_i = 0.
+\end{split}
+\end{equation}
+That is, it occurs when the one or more explanatory variables can perfectly predict the response variable \sqcitep{AlbertAnderson1984}. For example, as shown on Figure  \ref{Fig:Agresti_CS}, consider the following case that when $x$ is less than or equal to 40, all corresponding $y$ are $0$ and when $x$ is greater than or equal to 60, all corresponding $y$ are $1$. Suppose $x^T = [1, x_i]$ and $\beta = [-50, 1]^T.$ Then, we have $\hat{p} = 0$ for $x < 50$ and $\hat{p} = 1$ for $x > 50.$
+
+In terms of MLE, its value goes to the infinity or does not exist and the shape of log likelihood is flat over different values of estimate. Figure \ref{Fig:Agresti_loglik} shows the log likelihood of logistic model for this example with different working estimate from $\textbf{glm}$ function in R. We can see that likelihood value goes to infinity after a few iteration. As a result, the variance of $\hat{\beta_j}$ becomes very large 
+because it comes from the inverse of second derivatives of the likelihood function \eqref{logit_Fisher} and it leads us to unreasonable statistical inference. Unfortunately, none of common statistical software such as R, SAS and Python handles the separation issue and uninformed users sometimes uses the wrong model without knowing it.
+
+\begin{figure}[!t]
+  \centering
+  \begin{minipage}[b]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{Figures/Agresti_Complete_Separation.png}
+    \caption{Example of Complete Separation in Logistic Model}\label{Fig:Agresti_CS}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{Figures/Agresti_Complete_Separation2.png}
+    \caption{Log Likelihood Values of Logistic Model at each iteration}\label{Fig:Agresti_loglik}
+  \end{minipage}
+\end{figure}
+ 
+\subsection{One-Sided Confidence Interval}
+We use one-sided confidence intervals for the logistic  model mean value parameters to explain the uncertainty of estimation. Original concept can be found in Section 3.16 of Geyer's paper [\citeyear{Geyer2009}] and implementation details can be found in Section 4.3 of \citeauthor{Eck2020}'s work [\citeyear{Eck2020}]. Briefly, we construct confidence interval for mean value parameters such that one endpoint is observed response variable (i.e., lower bound if $y=0$ and upper bound if $y=1$) and the other endpoint is obtained by solving the optimization problem:
+
+\begin{equation} \label{CI_logistic}
+\begin{split}
+    \text{minimize } & \quad -\theta_k \\
+    \text{subject to } & \sum_{i \in I}[y_{i} \log{(p_i)} + (1 - y_i) \log{(1-p_{i}})] - \log{(\alpha) \geq 0}.
+\end{split}
+\end{equation}
+where $\theta_k = x_k^T\beta$ for any $k \in I$, $\textit{I}$ is a index of problematic points that cause the separation, $p$ is a mean value parameters, and $\alpha$ is a significance level.
+
+
+
+\noindent In $\textbf{inference}$ function from $\textbf{glmdr}$, we used the sequential quadratic programming (SQP) to solve the constrained nonlinear problem \eqref{CI_logistic}. 
+
+\subsection{Prediction}
+
+Prediction in $\textbf{glmdr}$ framework is different from that of the traditional statistical model because we estimate the mean value parameters rather than coefficient. Therefore, we firstly find the prediction intervals given new data point then take a average of them for predicted value.
+
+Given new data $x_{\text{new}}$ and training set $x_{\text{train}}$, we generate testing set by combing training set and each observation from new data. That is, $x_{i,\text{test}} = x_{\text{train}} \cup x_{i,\text{new}}$
+where $i$ is a index of whole new data. Then, we construct two testing labels that one has $y=0$ for new data point and the other has $y=1$ for new data point. Based on these two datasets, we fit two logistic models to compute the estimated probability of success for new data point, $\hat{p_1}$ and $\hat{p_2}$. Since we do not know which model is true model, we calculate the weighted probability, $\widehat{p^*} = w_1 \hat{p_1} + w_2 \hat{p_2}$ where
+$w_j$ is Akaike weights:
+$$w_j = \frac{{\exp(-\frac{IC_j}{2})}}{\exp(-\frac{IC_1}{2})+\exp(-\frac{IC_2}{2})},$$ 
+and $IC_j$ is the information criteria of model $j$ \sqcitep{burnham_anderson_2002}. We recommend the AICc for $IC$ because Akaike Inofrmation Criteria corrected (AICc) works well in small sample size and converges to AIC when we have large sample size. Lastly, we construct the Wilson intervals because it handles the extreme probability (i.e. $\hat{p} = 0$ or $1$)  better than Wald based intervals \sqcitep{Brown2000}. We can provide the predicted label based on the mean of this Wilson intervals. In our method, we label $1$ if $\widehat{p^*} \geq 0.5$ and $0$ if $\widehat{p^*} < 0.5$. Detailed implementation and examples are given in the supplementary materials.
+
+\section{Results}
+\subsection{Examples}
+
+\noindent\textbf{Complete Separation}
+
+\noindent\textbf{Quasi Complete Separation}
+
+\noindent\textbf{Quadratic}
+
+\noindent\textbf{Endometrial Cancer Study}
+
+\cite{Heinze2002} firstly investigated the endometrial data set (n = 79), which was originally provided by Dr. Asseryanis from the Vienna University Medical School. The main purpose of this study was to describe histology of cases (HG) in terms of three risk factors: neovasculation (NV), endometrium height (EH) and pulsatility index of arteria uterina (PI). 30 patients was classified grading 0-II for histology (HG = 0) and 49 patients for grading III-IV (HG = 1). There are 13 patients who has neovasculization (NV = 1) and absent for 66 patients (NV = 0). Pulsatility index (PI) ranges from 0 to 49 with mean of 17.38 and median of 16.00, and endometirum height (EH) ranges from 0.27 to 3.61 with mean of 1.662 and median of 1.640.
+
+\noindent\textbf{Maize data}
+
+\bibliographystyle{plainnat}
+\bibliography{Reference}
+
+
+\end{document}
