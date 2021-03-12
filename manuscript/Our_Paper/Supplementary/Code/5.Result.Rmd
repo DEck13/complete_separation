@@ -19,7 +19,6 @@ library(binom)
 ```
 
 
-# Data
 
 ## Agresti
 
