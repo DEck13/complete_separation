@@ -96,7 +96,7 @@ To get the expected value from the logistic model, we can consider mean-value pa
 \subsection{Complete Separation}
 \label{sec:complete_separation}
 
-The traditional maximum likelihood estimation does not work well when there is complete or quasi-complete separation in the data. \cite{agresti_categorical_2013} defines complete separation when there exists a vector $b$ such that
+The traditional maximum likelihood estimation does not work well when there is complete or quasi-complete separation in the data. \cite{agresti_categorical_2013} defines complete separation when exists a vector $b$ such that
 
 \begin{equation}\label{definition_complete_separation}
 \begin{split}
@@ -104,26 +104,23 @@ x_{i}^{T} b &> 0 \text{ whenever } y_i = 1, \\
 x_{i}^{T} b &< 0 \text{ whenever } y_i = 0.
 \end{split}
 \end{equation}
-That is, it occurs when the one or more explanatory variables can perfectly predict the response variable \sqcitep{AlbertAnderson1984}. For example, as shown in the Figure~\ref{Fig:Complete_Separation_Example}, consider the following case that when $x$ is less than 50, all corresponding $y$ are $0$ and when $x$ is greater than 50, all corresponding $y$ are $1$. Suppose we are interested in a simple logistic regression model $x^T = [1, x_i]$. Then this data is completely separated with $b = [-50, 1]^T.$ Moreover, we have $\hat{p} = 0$ for $x < 50$ and $\hat{p} = 1$ for $x > 50$.
+That is, it occurs when the one or more explanatory variables can perfectly predict the response variable \sqcitep{AlbertAnderson1984}. For example, as shown in the left panel of Figure~\ref{Fig:Agresti_Asymptotes}, consider the following case that when $x$ is less than 50, all corresponding $y$ are $0$ and when $x$ is greater than 50, all corresponding $y$ are $1$. Suppose we are interested in a simple logistic regression model $x^T = [1, x_i]$. Then this data is completely separated with $b = [-50, 1]^T.$ Moreover, we have $\hat{p} = 0$ for $x < 50$ and $\hat{p} = 1$ for $x > 50$.
 
-\begin{figure}[!ht]
-  \centering
-    \includegraphics[width=0.5\textwidth]{Figures/Agresti_Complete_Separation.png}
-    \caption{Example of complete separation from Section 6.5.1 of \cite{agresti_categorical_2013}. The conventional MLE of a logistic model does not exist.}\label{Fig:Complete_Separation_Example}
-\end{figure}
+\commentline{Figure~\ref{Fig:Agresti_Asymptotes} should also include a ``zoomed in'' panel which shows the log-liklihood at $\log(\|\beta\|)$ from around 4 to 5. We should also include another panel or another plot which shows depicts the one-sided intervals obtained using \texttt{glmdr}.}
 
-When there is complete separation, the MLE $\hat\beta$ as at infinity, the iteration based estimation algorithms provide a sequence of estimates that goes to infinity, and the log likelihood becomes flat when evaluated along this sequence. The left panel of Figure \ref{Fig:asymptotes} shows the log likelihood of logistic model for this example with different working estimate from $\texttt{glm}$ function in R. We can see that each iteration, norm of $\beta$ becomes larger and asymptote of the log likelihood value goes to infinity. Also, the right panel of Figure \ref{Fig:asymptotes} displays the log likelihood value still approaches near zero although it looks flat in the  left panel of Figure \ref{Fig:asymptotes}. As a result, the variance of $\hat{\beta_j}$ becomes very large because it comes from the inverse of second derivatives of the likelihood function \eqref{logit_Fisher} and it leads us to unreasonable statistical inference. Unfortunately, none of common statistical software such as R, SAS and Python can handle the separation issue properly and uninformed users sometimes uses the wrong model without knowing it. The \texttt{glmdr} software package \sqcitep{Eck2020} is designed to provide users with a description of the complete separation problem when it occurs, and provide statistical inferences when it occurs.
 
-\begin{figure}[!ht]
-  \centering
-    \includegraphics[width=\textwidth]{Figures/asymptotes.png}
-    \caption{\textbf{Left panel}: Log likelihood values of logistic model at different working estimates. Blue dot represents the log likelihood value at each iteration. \textbf{Right panel:} Zoom in view of a log likelihood values of logistic model where log of norm of working estimates lie between 4.5 and 5.}\label{Fig:asymptotes}
-\end{figure}
+When there is complete separation, the MLE $\hat\beta$ as at infinity, the iteration based estimation algorithms provide a sequence of estimates that goes to infinity, and the log likelihood becomes flat when evaluated along this sequence. The right panel of Figure \ref{Fig:Agresti_Asymptotes} shows the log likelihood of logistic model for this example with different working estimate from $\texttt{glm}$ function in R. We can see that each iteration, norm of $\beta$ becomes larger and asymptote of the log likelihood value goes to infinity. As a result, the variance of $\hat{\beta_j}$ becomes very large because it comes from the inverse of second derivatives of the likelihood function \eqref{logit_Fisher} and it leads us to unreasonable statistical inference. Unfortunately, none of common statistical software such as R, SAS and Python can handle the separation issue properly and uninformed users sometimes uses the wrong model without knowing it. The \texttt{glmdr} software package \sqcitep{Eck2020} is designed to provide users with a description of the complete separation problem when it occurs, and provide statistical inferences when it occurs.
 
 Quasi-complete separation is another case of separation that there are both a success and a failure on the hyperplane that separates the successes from the failures \sqcitep{lesaffre_albert_1989}. For instance, we can consider additional two points that $x = 50$ with $y=1$ and $y=0$ to the previous complete separation example. That is, we have $y_i = 0$ for $x \leq 50$ and $y_i =0$ for $x \geq 50$. In this case, the maximized log likelihood is always negative and we experience same phenomenon as the complete separation case.
 
+\begin{figure}[!tbp]
+  \centering
+    \includegraphics[width=\textwidth]{Figures/Agresti_Complete_Separation.png}
+    \caption{\textbf{Left panel}: Example of complete separation from Section 6.5.1 of \cite{agresti_categorical_2013}. The conventional MLE of a logistic model does not exist. \textbf{Right panel:} Log likelihood values of logistic model at different working estimates. Blue dot represents the log likelihood value at each iteration. }\label{Fig:Agresti_Asymptotes}
+\end{figure}
+ 
 \subsection{One-Sided Confidence Interval}
-We use one-sided confidence intervals for the logistic model's mean value parameters to explain the uncertainty of estimation. Original concept can be found in Section 3.16 of Geyer's paper [\citeyear{Geyer2009}] and implementation details can be found in Section 4.3 of \citeauthor{Eck2020}'s work [\citeyear{Eck2020}]. Briefly, we construct confidence interval for mean value parameters such that one endpoint is observed response variable (i.e., lower bound if $y_i=0$ and upper bound if $y_i=1$) and the other endpoint is obtained by solving the optimization problem:
+We use one-sided confidence intervals for the logistic  model mean value parameters to explain the uncertainty of estimation. Original concept can be found in Section 3.16 of Geyer's paper [\citeyear{Geyer2009}] and implementation details can be found in Section 4.3 of \citeauthor{Eck2020}'s work [\citeyear{Eck2020}]. Briefly, we construct confidence interval for mean value parameters such that one endpoint is observed response variable (i.e., lower bound if $y_i=0$ and upper bound if $y_i=1$) and the other endpoint is obtained by solving the optimization problem:
 
 \begin{equation} \label{CI_logistic}
 \begin{split}
@@ -131,23 +128,21 @@ We use one-sided confidence intervals for the logistic model's mean value parame
     \text{subject to } & \sum_{i \in I}[y_{i} \log{(p_i)} + (1 - y_i) \log{(1-p_{i}})] - \log{(\alpha) \geq 0}.
 \end{split}
 \end{equation}
-where $\theta_k = x_k^T\beta$ for any $k \in I$, $\textit{I}$ is a index of problematic points that cause the separation, $p$ is a mean value parameters, and $\alpha$ is a significance level. For example, Figure \ref{Fig:One_sided_CI} shows the one-sided confidence interval for the complete separation example we discussed in Section \ref{sec:complete_separation}. We can see the confidence interval increases as $x$ increases until $x = 40$ then it starts to decrease as $x$ increases. Also, we have a widest interval where $x = 40$ and $x = 60$. It means our uncertainty on estimation keep increases from $x=10$ to $x=40$ and we have the highest uncertainty near the separation occurs. Then it diminishes as it furthers away from the boundary of the separation. In $\texttt{glmdr}$, $\texttt{inference}$ function provides this confidence intervals using the sequential quadratic programming (SQP) to solve the constrained nonlinear problem \eqref{CI_logistic}. 
+where $\theta_k = x_k^T\beta$ for any $k \in I$, $\textit{I}$ is a index of problematic points that cause the separation, $p$ is a mean value parameters, and $\alpha$ is a significance level. In $\texttt{glmdr}$, $\texttt{inference}$ function provides this confidence intervals using the sequential quadratic programming (SQP) to solve the constrained nonlinear problem \eqref{CI_logistic}. 
 
-\begin{figure}[!ht]
-  \centering
-    \includegraphics[width=0.5\textwidth]{Figures/One_sided_CI.png}
-    \caption{One-sided 95\% confidence interval for the example of complete separation from Section \ref{sec:complete_separation}. Solid dot represents the observed value and bar shows the interval. $\hat{p}$ is the estimated probability of a success given $x$. }\label{Fig:One_sided_CI}
-\end{figure}
 
 \subsection{Prediction}
 
-Prediction in $\texttt{glmdr}$ framework is different from that of the conventional statistical model because we do not have a finite estimate. Specifically, in the traditional sense, we can compute the predicted value for new data point from the logistic model using $\hat{p}_{pred} = (1 + \exp{(-x_{new}^T \hat{\beta})})^{-1}.$ However, when the complete separation presents, this approach does not work. Therefore, we propose new method for the prediction that we fit two possible models for new data point then compute the weighted conditional probability of a success.
+Prediction in $\texttt{glmdr}$ framework is different from that of the conventional statistical model because we do not have a finite estimate. Specifically, in the traditional sense, we can compute the predicted value for new data point from the logistic model using $\hat{p}_{pred} = (1 + \exp{(-x_{new}^T \hat{\beta})})^{-1}.$ However, when the complete separation presents, this approach does not work. Therefore, we propose new method for the prediction that we fit two possible models for new data point then compute the weighted conditional probability of success.
 
 Given new data $x_{\text{new}}$ and training set $x_{\text{train}}$, we generate testing set by combing training set and each observation from new data. That is, $x_{i,\text{test}} = x_{\text{train}} \cup x_{i,\text{new}}$
-where $i$ is a index of whole new data. Then, we construct two testing labels that one has $y_{\text{new}}=0$ and the other has $y_{\text{new}}=1$ for new data point. Based on these two datasets, we fit two logistic models to compute the estimated probability of a success for new data points, $\hat{p_1}$ and $\hat{p_2}$. Since we do not know which model produces more probable estimate, we consider the weight of evidence in favor of one of models which originated from the Akaike Weights for the model selection \sqcitep{burnham_anderson_2002}. Let $w_j$ be the weight for model $j$ defined by:
+where $i$ is a index of whole new data. Then, we construct two testing labels that one has $y=0$ and the other has $y=1$ for new data point. Based on these two datasets, we fit two logistic models to compute the estimated probability of success for new data points, $\hat{p_1}$ and $\hat{p_2}$. We then calculate the weighted probability, $\widehat{p^*} = w_1 \hat{p_1} + w_2 \hat{p_2}$ where
+$w_j$ is Akaike weights:
 $$w_j = \frac{{\exp(-\frac{IC_j}{2})}}{\exp(-\frac{IC_1}{2})+\exp(-\frac{IC_2}{2})},$$ 
-where $IC_j$ is the information criteria of model $j$. Then we can calculate the model averaged estimates, $\widehat{p^*} = \sum_{j=1}^2 w_j \hat{p_j}$.
-This averaged estimate is especially useful for prediction in our framework because we can use all predicted values from models we have. For $IC$, we recommend the Akaike Inofrmation Criteria corrected (AICc) because AICc works well in small sample size and converges to AIC when we have large sample size \sqcitep{AICc_Paper}. Lastly, we construct the Wilson intervals because it handles the extreme probability (i.e. $\hat{p} = 0$ or $1$)  better than Wald based intervals \sqcitep{Brown2000}. We can provide the predicted label based on the mean of this Wilson intervals. In our method, we label $1$ if $\widehat{p^*} \geq 0.5$ and $0$ if $\widehat{p^*} < 0.5$. Detailed implementation and examples are given in the supplementary materials.
+and $IC_j$ is the information criteria of model $j$ \sqcitep{burnham_anderson_2002}. For $IC$, we recommend the Akaike Inofrmation Criteria corrected (AICc) because AICc works well in small sample size and converges to AIC when we have large sample size. Lastly, we construct the Wilson intervals because it handles the extreme probability (i.e. $\hat{p} = 0$ or $1$)  better than Wald based intervals \sqcitep{Brown2000}. We can provide the predicted label based on the mean of this Wilson intervals. In our method, we label $1$ if $\widehat{p^*} \geq 0.5$ and $0$ if $\widehat{p^*} < 0.5$. Detailed implementation and examples are given in the supplementary materials.
+
+\commentline{This is better. But our prediction scheme needs more detail. You need to define what the weights are first, and then you can define $\widehat{p^*}$. You can frame this as "model averaging" even though this isn't model averaging in the traditional sense. The \cite{burnham_anderson_2002} reference should be for model averaging. Another reference should be for AICc.}
+
 
 \section{Results}
 \subsection{Examples}
@@ -172,19 +167,22 @@ In this case, MLE does not exist when we fit the logistic model using $\texttt{g
 
 We fit the logistic model where the response variable is kernel color. We dropped 5 markers out of 24 markers due to the collinearity issue and thus we use the population structures and 19 markers for the explanatory variables. We compare the in-sample accuracy and total length of confidence intervals among $\texttt{glmdr}$, $\texttt{bayesglm}$ \sqcitep{Gelman2008}, $\texttt{logistf}$ \sqcitep{Heinze2002} (we tested $\texttt{brglm2}$ \sqcitep{Kosmidis2009} but algorithm did not converge. Instead, we used $\texttt{logistf}$, which is equivalent to $\texttt{brglm2}$ with type of score adjustment as a maximum penalized likelihood with powers of the Jeffreys prior as a penalty) and multiple linear model. We use Wilson interval to compute the total length of confidence intervals for logistic models and Wald type confidence intervals for the linear model. In Table \ref{Tab:estimation}, we can see all model performs comparably.
 
-\begin{table}[!ht]
+\commentline{Can you change the total lengths in Table \ref{Tab:estimation} to average lengths?}
+
+
+\begin{table}[!h]
 \caption{Model performances for all examples.}\label{Tab:estimation}
 \centering
     \resizebox{\columnwidth}{!}{
     \begin{tabular}{lcccccccc}
     & \multicolumn{1}{l}{glmdr} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{logistf/brglm2} & \multicolumn{1}{l}{linear} & \multicolumn{1}{l}{glmdr} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{logistf/brglm2} & \multicolumn{1}{l}{linear}  \\
-    & \multicolumn{4}{c}{in-sample accuracy} &\multicolumn{4}{c}{average length of confidence intervals}\\ 
+    & \multicolumn{4}{c}{in-sample accuracy} &\multicolumn{4}{c}{total length of confidence intervals}\\ 
     \hline
-    Complete Separation & 100 \% & 100 \% & 100 \% & 100 \% & 0.55 & 0.83 & 0.84 & 0.45 \\
-    Quasi Separation & 90 \% & 90 \% & 90 \% & 90 \% & 0.42 & 0.84 & 0.84 & 0.55 \\
-    Quadratic & 100 \% & 100 \% & 100 \% & 90 \% & 0.20 & 0.82 & 0.81 & 0.43 \\
-    Endometrial & 88.61 \% & 88.61 \% & 88.61 \% & 86.08 \% & 0.74 & 0.84 & 0.84 & 0.30 \\
-    Maize & 87.14 \% & 87.07 \% & 87.01 \% & 86.81 \% & 0.82 & 0.84 & 0.84 & 0.10                          
+    Complete Separation & 100 \% & 100 \% & 100 \% & 100 \% & 6.35 & 6.63 & 6.68 & 3.63 \\
+    Quasi Separation & 90 \% & 90 \% & 90 \% & 90 \% & 8.13 & 8.40 & 8.43 & 5.49 \\
+    Quadratic & 100 \% & 100 \% & 100 \% & 90 \% & 23.80 & 24.70 & 24.33 & 13.02 \\
+    Endometrial & 88.61 \% & 88.61 \% & 88.61 \% & 86.08 \% & 66.23 & 66.56 & 66.63 & 23.52 \\
+    Maize & 87.14 \% & 87.07 \% & 87.01 \% & 86.81 \% & 1293.01 & 1294.97 & 1296.37 & 152.32                          
     \end{tabular}
     }
 \end{table}
@@ -194,7 +192,7 @@ We fit the logistic model where the response variable is kernel color. We droppe
 
 We use the leave-one-out cross validation (LOOV) for prediction. This setting is the most suitable as we want to predict the kernel color of new maize given our data. In Table \ref{Tab:prediction}, we can see all models show similar performance. 
 
-\begin{table}[!ht]
+\begin{table}[!h]
 \caption{Prediction results for all examples.}\label{Tab:prediction}
 \centering
     \begin{tabular}{lcccccccc}

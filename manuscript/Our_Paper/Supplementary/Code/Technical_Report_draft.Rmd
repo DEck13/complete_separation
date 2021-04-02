@@ -14,11 +14,12 @@ library(brglm2)
 library(arm)
 library(binom)
 library(ggplot2)
+library(gridExtra)
 library(logistf)
 library(foreach)
 library(doParallel)
+library(latex2exp)
 ```
-
 
 # Agresti Complete Separation Example
 
@@ -28,32 +29,6 @@ library(doParallel)
 x <- c(10,20,30,40,60,70,80,90)
 y <- c(0,0,0,0,1,1,1,1)
 mod1 <- glm(y~x,family="binomial")
-plot(y~x, pch=16)
-n <- mod1$iter
-lst <- rep(NA,n)
-for(i in 1:n){
-  lst[i] <- suppressWarnings(logLik(glm(y~x, family="binomial", control = list(maxit=i,eps=1e-20))))
-}
-plot(lst,ylab="Log Likelihood",xlab="i-th iteration",type="l")
-abline(a =0, b =0, lty=2, col ="red")
-
-asymptote <- t(sapply(1:30, function(iter){
-  m1 <- suppressWarnings(glm(y ~ x, family = "binomial", control = list(maxit = iter, epsilon = 1e-20)))
-  c(sqrt(log(crossprod(coef(m1)))), logLik(m1))
-}))
-asymptote <- as.data.frame(asymptote)
-ggplot(asymptote) +
-  ggtitle("asymptote of the log likelihood") +
-  labs(x= expression(log(~"||"~beta~"||")), y= "log likelihood") +
-  geom_line(aes(x = V1, y = V2), col = "black") +
-  geom_abline(intercept = 0, slope = 0, lty = 2, col = "red") +
-  theme(legend.position="bottom", panel.background = element_blank(),
-        legend.key = element_rect(fill = "white"),
-        axis.ticks.x = element_blank(),
-        panel.grid.major.x = element_line("lightgrey", size = 0.15),
-        panel.grid.major.y = element_line("lightgrey", size = 0.15),
-        panel.grid.minor.x = element_line("lightgrey", size = 0.07),
-        panel.grid.minor.y = element_line("lightgrey", size = 0.07))
 ```
 
 ## Estimation
@@ -61,10 +36,54 @@ ggplot(asymptote) +
 ```{r}
 glmdr_mod <- glmdr(y~x,family="binomial")
 mod_CI <- inference(glmdr_mod)
-plot(x, y, ylim = c(0,1), pch = 16, ylab = "", xlab = "")
-points(x, mod_CI[, 1])
-points(x, mod_CI[, 2])
-segments(x, mod_CI[, 1], x, mod_CI[, 2])
+
+
+plot1 <- ggplot(data=as.data.frame(cbind(x,y)),aes(x=x,y=y)) +
+  geom_point(size=3) +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
+  scale_x_continuous(breaks = x)+
+  scale_y_continuous(breaks = c(0.0,1.0))
+
+plot2 <- ggplot(data=as.data.frame(cbind(x,y,mod_CI)),aes(x=x,y=y)) +
+  geom_point(size=3) +
+  geom_point(aes(x=x, y=lower),size=3,pch=1) +
+  geom_point(aes(x=x, y=upper),size=3,pch=1) +
+  geom_point(size=3) +
+  geom_segment(aes(x = x, y = y, xend = x, yend = lower)) +
+  geom_segment(aes(x = x, y = y, xend = x, yend = upper)) +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"), axis.title=element_text(size=15))+
+  labs(x="x", y= TeX('$\\textbf{\\hat{p}}$')) +
+  scale_x_continuous(breaks = x)+
+  scale_y_continuous(breaks = c(0.0,1.0))
+
+#ggsave("./plot1.png",plot1)
+#ggsave("./One_sided_CI.png",plot2,device="png")
+
+grid.arrange(plot1,plot2, ncol=2)
+
+asymptote <- t(sapply(1:30, function(iter){
+  m1 <- suppressWarnings(glm(y ~ x, family = "binomial", control = list(maxit = iter, epsilon = 1e-50)))
+  c(log(sqrt(crossprod(coef(m1)))),logLik(m1))
+  }))
+asymptote <- as.data.frame(asymptote)
+asymptote$V3 <- as.factor(ifelse(asymptote$V1 >=4.5,1,0))
+plot3 <- ggplot(asymptote,aes(x = V1, y = V2)) +
+  labs(x= expression(log(~"||"~beta~"||")), y= "log likelihood") +
+  geom_line(col = "black") +
+  geom_point(pch=1,col="blue",size=2) +
+  geom_abline(intercept = 0, slope = 0, lty = 2, col = "red") +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))
+
+plot4 <- ggplot(asymptote[asymptote$V3 == 1,],aes(x = V1, y = V2)) +
+  labs(x= expression(log(~"||"~beta~"||")), y= "log likelihood") +
+  geom_line(col = "black") +
+  xlim(4.5,5.0)+
+  geom_point(pch=1,col="blue",size=2) +
+  geom_abline(intercept = 0, slope = 0, lty = 2, col = "red") +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"))
+
+grid.arrange(plot3,plot4, ncol=2)
+
 ```
 
 ### Comparison
@@ -73,6 +92,7 @@ segments(x, mod_CI[, 1], x, mod_CI[, 2])
 bayes_mod <- bayesglm(y~x,family="binomial")
 glmdr_mod <- glmdr(y~x,family="binomial")  
 brglm_mod <- glm(y~x, family = "binomial", method = "brglmFit", type = "MPL_Jeffreys")
+lm_mod <- lm(y~x)
 
 mean((predict(bayes_mod,type="response") >= 0.5) == y)
 bayes_CI <- binom.confint(predict(bayes_mod,type="response"),n=1,methods="wilson")[,c(5,6)]
@@ -83,13 +103,111 @@ brglm_CI <- binom.confint(predict(brglm_mod,type="response"),n=1,methods="wilson
 brglm_length <- sum(as.matrix(brglm_CI) %*% c(-1,1))
 
 mean((predict(glmdr_mod$om,type="response") >= 0.5) == y)
-glmdr_CI <- binom.confint(predict(glmdr_mod$om,type="response"),n=1,methods="wilson")[,c(5,6)]
+glmdr_CI <- inference(glmdr_mod)
 glmdr_length <- sum(as.matrix(glmdr_CI) %*% c(-1,1))
 
-cbind(glmdr_length,bayes_length,brglm_length)
+lm_pred <- (predict(lm_mod,se.fit = TRUE))
+mean((lm_pred$fit >= 0.5) == y)
+lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
+lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
+cbind(glmdr_length,bayes_length,brglm_length,lm_length) / length(x)
+```
+
+```{r}
+plot(lm_mod)
 ```
 
 
+## Prediction
+
+```{r}
+n_sample <- length(x)
+total_mat_glmdr_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_bayes_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_logistf_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_linear_test <- matrix(NA,nrow=n_sample,ncol=4)
+numCores <- detectCores()
+registerDoParallel(numCores)
+y_idx <- which(names(glmdr_mod$om$model) == paste(formula(glmdr_mod$om))[2])
+dat <- glmdr_mod$om$model
+#glmdr
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  glmdr_mod <- glmdr(y~x, data=training,family="binomial")
+  ret2 <- predict(glmdr_mod,newdata = testing_X, alpha=0.05,crit="AICc",interval = "wilson")
+  total_mat_glmdr_test[i,1] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 1) #true positive
+  total_mat_glmdr_test[i,2] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 0) #true negative
+  total_mat_glmdr_test[i,3] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 0) #false positive
+  total_mat_glmdr_test[i,4] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 1) #false negative
+  total_mat_glmdr_test[i,]
+}
+total_mat_glmdr_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#bayesglm
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  bayesglm_mod <- bayesglm(y~x, data=training, family="binomial")
+  ret2 <- predict(bayesglm_mod, newdata= testing_X, type="response")
+  total_mat_bayes_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_bayes_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_bayes_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_bayes_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative
+  total_mat_bayes_test[i,]
+}
+total_mat_bayes_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#logistf
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  logistf_mod <- logistf(y~x,data=training, family="binomial")
+  new_dat <- rbind(logistf_mod$data,as.data.frame(cbind("y"=testing_Y,testing_X),col.names=colnames(logistf_mod$data)))
+  ret2 <- c(invlogit(tail(model.matrix(y~.,data=new_dat),1) %*% logistf_mod$coefficients))
+  total_mat_logistf_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_logistf_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_logistf_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_logistf_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative    
+  total_mat_logistf_test[i,]
+}
+total_mat_logistf_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#OLS
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  lm_mod <- lm(y~x,data=training, family="binomial")
+  ret2 <- predict(lm_mod, newdata= testing_X, type="response")
+  total_mat_linear_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_linear_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_linear_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_linear_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative
+  total_mat_linear_test[i,]
+}
+total_mat_linear_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+sum(colSums(total_mat_glmdr_test[,1:4])[1:2]) / sum(colSums(total_mat_glmdr_test[,1:4])) # glmdr
+
+sum(colSums(total_mat_bayes_test[,1:4])[1:2]) / sum(colSums(total_mat_bayes_test[,1:4])) # bayesglm
+
+sum(colSums(total_mat_logistf_test[,1:4])[1:2]) / sum(colSums(total_mat_logistf_test[,1:4])) # logistf
+
+sum(colSums(total_mat_linear_test[,1:4])[1:2]) / sum(colSums(total_mat_linear_test[,1:4])) # linear
+```
 
 
 # Agresti Quasi-Complete Separation Example
@@ -122,6 +240,7 @@ segments(x, mod_CI[, 1], x, mod_CI[, 2])
 bayes_mod <- bayesglm(y~x,family="binomial")
 glmdr_mod <- glmdr(y~x,family="binomial")  
 brglm_mod <- glm(y~x, family = "binomial", method = "brglmFit", type = "MPL_Jeffreys")
+lm_mod <- lm(y~x)
 
 mean((predict(bayes_mod,type="response") >= 0.5) == y)
 bayes_CI <- binom.confint(predict(bayes_mod,type="response"),n=1,methods="wilson")[,c(5,6)]
@@ -133,13 +252,107 @@ brglm_length <- sum(as.matrix(brglm_CI) %*% c(-1,1))
 
 mean(c((predict(glmdr_mod$om,type="response")[!glmdr_mod$linearity] >= 0.5) == y[!glmdr_mod$linearity]
        ,(predict(glmdr_mod$lcm,type="response") >= 0.5) == y[glmdr_mod$linearity]))
-glmdr_CI <- binom.confint(predict(glmdr_mod$om,type="response")[!glmdr_mod$linearity],n=1,methods="wilson")[,c(5,6)]
+glmdr_CI <- inference(glmdr_mod)
 glmdr_CI <- rbind(glmdr_CI,binom.confint(predict(glmdr_mod$lcm,type="response"),n=1,methods="wilson")[,c(5,6)])
 glmdr_length <- sum(as.matrix(glmdr_CI) %*% c(-1,1))
 
-cbind(glmdr_length,bayes_length,brglm_length)
+lm_pred <- (predict(lm_mod,se.fit = TRUE))
+mean((lm_pred$fit >= 0.5) == y)
+lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
+lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
+cbind(glmdr_length,bayes_length,brglm_length,lm_length) / length(x)
+```
+## Prediction
+
+```{r}
+n_sample <- length(x)
+total_mat_glmdr_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_bayes_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_logistf_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_linear_test <- matrix(NA,nrow=n_sample,ncol=4)
+numCores <- detectCores()
+registerDoParallel(numCores)
+y_idx <- which(names(glmdr_mod$om$model) == paste(formula(glmdr_mod$om))[2])
+dat <- glmdr_mod$om$model
+#glmdr
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  glmdr_mod <- glmdr(y~x, data=training,family="binomial")
+  ret2 <- predict(glmdr_mod,newdata = testing_X, alpha=0.05,crit="AICc",interval = "wilson")
+  total_mat_glmdr_test[i,1] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 1) #true positive
+  total_mat_glmdr_test[i,2] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 0) #true negative
+  total_mat_glmdr_test[i,3] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 0) #false positive
+  total_mat_glmdr_test[i,4] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 1) #false negative
+  total_mat_glmdr_test[i,]
+}
+total_mat_glmdr_test <- do.call(rbind,ret)
 ```
 
+```{r, eval=FALSE}
+#bayesglm
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  bayesglm_mod <- bayesglm(y~x, data=training, family="binomial")
+  ret2 <- predict(bayesglm_mod, newdata= testing_X, type="response")
+  total_mat_bayes_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_bayes_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_bayes_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_bayes_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative
+  total_mat_bayes_test[i,]
+}
+total_mat_bayes_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#logistf
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  logistf_mod <- logistf(y~x,data=training, family="binomial")
+  new_dat <- rbind(logistf_mod$data,as.data.frame(cbind("y"=testing_Y,testing_X),col.names=colnames(logistf_mod$data)))
+  ret2 <- c(invlogit(tail(model.matrix(y~.,data=new_dat),1) %*% logistf_mod$coefficients))
+  total_mat_logistf_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_logistf_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_logistf_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_logistf_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative    
+  total_mat_logistf_test[i,]
+}
+total_mat_logistf_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#OLS
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  lm_mod <- lm(y~x,data=training, family="binomial")
+  ret2 <- predict(lm_mod, newdata= testing_X, type="response")
+  total_mat_linear_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_linear_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_linear_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_linear_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative
+  total_mat_linear_test[i,]
+}
+total_mat_linear_test <- do.call(rbind,ret)
+```
+
+
+```{r, eval=FALSE}
+sum(colSums(total_mat_glmdr_test[,1:4])[1:2]) / sum(colSums(total_mat_glmdr_test[,1:4])) # glmdr
+
+sum(colSums(total_mat_bayes_test[,1:4])[1:2]) / sum(colSums(total_mat_bayes_test[,1:4])) # bayesglm
+
+sum(colSums(total_mat_logistf_test[,1:4])[1:2]) / sum(colSums(total_mat_logistf_test[,1:4])) # logistf
+
+sum(colSums(total_mat_linear_test[,1:4])[1:2]) / sum(colSums(total_mat_linear_test[,1:4])) # linear
+```
 
 # Quadratic Example
 
@@ -169,6 +382,7 @@ with(quadratic,segments(x, mod_CI[, 1], x, mod_CI[, 2]))
 bayes_mod <- bayesglm(y~x+I(x^2),data=quadratic,family="binomial")
 glmdr_mod <- glmdr(y~x+I(x^2),data=quadratic,family="binomial")  
 brglm_mod <- glm(y~x+I(x^2),data=quadratic,family = "binomial", method = "brglmFit", type = "MPL_Jeffreys")
+lm_mod <- lm(y~x+I(x^2),data=quadratic)  
 
 mean((predict(bayes_mod,type="response") >= 0.5) == quadratic$y)
 bayes_CI <- binom.confint(predict(bayes_mod,type="response"),n=1,methods="wilson")[,c(5,6)]
@@ -179,10 +393,104 @@ brglm_CI <- binom.confint(predict(brglm_mod,type="response"),n=1,methods="wilson
 brglm_length <- sum(as.matrix(brglm_CI) %*% c(-1,1))
 
 mean((predict(glmdr_mod$om,type="response") >= 0.5) == quadratic$y)
-glmdr_CI <- binom.confint(predict(glmdr_mod$om,type="response"),n=1,methods="wilson")[,c(5,6)]
+glmdr_CI <- inference(glmdr_mod)
 glmdr_length <- sum(as.matrix(glmdr_CI) %*% c(-1,1))
 
-cbind(glmdr_length,bayes_length,brglm_length)
+lm_pred <- (predict(lm_mod,se.fit = TRUE))
+mean((lm_pred$fit >= 0.5) == quadratic$y)
+lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
+lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
+cbind(glmdr_length,bayes_length,brglm_length,lm_length) / nrow(quadratic)
+```
+
+## Prediction
+
+```{r}
+n_sample <- nrow(quadratic)
+total_mat_glmdr_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_bayes_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_logistf_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_linear_test <- matrix(NA,nrow=n_sample,ncol=4)
+numCores <- detectCores()
+registerDoParallel(numCores)
+y_idx <- which(names(glmdr_mod$om$model) == paste(formula(glmdr_mod$om))[2])
+dat <- glmdr_mod$om$model
+#glmdr
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  glmdr_mod <- glmdr(y~x+I(x^2),data=training, family="binomial")
+  ret2 <- predict(glmdr_mod,newdata = testing_X, alpha=0.05,crit="AICc",interval = "wilson")
+  total_mat_glmdr_test[i,1] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 1) #true positive
+  total_mat_glmdr_test[i,2] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 0) #true negative
+  total_mat_glmdr_test[i,3] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 0) #false positive
+  total_mat_glmdr_test[i,4] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 1) #false negative
+  total_mat_glmdr_test[i,]
+}
+total_mat_glmdr_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#bayesglm
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  bayesglm_mod <- bayesglm(y~x+I(x^2),data=training, family="binomial")
+  ret2 <- predict(bayesglm_mod, newdata= testing_X, type="response")
+  total_mat_bayes_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_bayes_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_bayes_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_bayes_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative
+  total_mat_bayes_test[i,]
+}
+total_mat_bayes_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#logistf
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  brglm_mod <- glm(y~x+I(x^2),data=training,family = "binomial", method = "brglmFit", type = "MPL_Jeffreys")
+  ret2 <- predict(brglm_mod, newdata= testing_X, type="response")
+  total_mat_logistf_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_logistf_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_logistf_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_logistf_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative    
+  total_mat_logistf_test[i,]
+}
+total_mat_logistf_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#OLS
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  lm_mod <- lm(y~x+I(x^2),data=training)
+  ret2 <- predict(lm_mod, newdata= testing_X, type="response")
+  total_mat_linear_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_linear_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_linear_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_linear_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative
+  total_mat_linear_test[i,]
+}
+total_mat_linear_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+sum(colSums(total_mat_glmdr_test[,1:4])[1:2]) / sum(colSums(total_mat_glmdr_test[,1:4])) # glmdr
+
+sum(colSums(total_mat_bayes_test[,1:4])[1:2]) / sum(colSums(total_mat_bayes_test[,1:4])) # bayesglm
+
+sum(colSums(total_mat_logistf_test[,1:4])[1:2]) / sum(colSums(total_mat_logistf_test[,1:4])) # logistf
+
+sum(colSums(total_mat_linear_test[,1:4])[1:2]) / sum(colSums(total_mat_linear_test[,1:4])) # linear
 ```
 
 # Endometrial
@@ -209,6 +517,7 @@ inference(glmdr_mod)
 bayes_mod <- bayesglm(HG~.,data=endometrial,family="binomial")
 glmdr_mod <- glmdr(HG~.,data=endometrial,family="binomial")  
 brglm_mod <- glm(HG~.,data=endometrial,family = "binomial", method = "brglmFit", type = "MPL_Jeffreys")
+lm_mod <- lm(HG~.,data=endometrial)  
 
 mean((predict(bayes_mod,type="response") >= 0.5) == endometrial$HG)
 bayes_CI <- binom.confint(predict(bayes_mod,type="response"),n=1,methods="wilson")[,c(5,6)]
@@ -220,13 +529,105 @@ brglm_length <- sum(as.matrix(brglm_CI) %*% c(-1,1))
 
 mean(c((predict(glmdr_mod$om,type="response")[!glmdr_mod$linearity] >= 0.5) == endometrial$HG[!glmdr_mod$linearity]
        ,(predict(glmdr_mod$lcm,type="response") >= 0.5) == endometrial$HG[glmdr_mod$linearity]))
-glmdr_CI <- binom.confint(predict(glmdr_mod$om,type="response")[!glmdr_mod$linearity],n=1,methods="wilson")[,c(5,6)]
+glmdr_CI <- inference(glmdr_mod)
 glmdr_CI <- rbind(glmdr_CI,binom.confint(predict(glmdr_mod$lcm,type="response"),n=1,methods="wilson")[,c(5,6)])
 glmdr_length <- sum(as.matrix(glmdr_CI) %*% c(-1,1))
 
-cbind(glmdr_length,bayes_length,brglm_length)
+lm_pred <- (predict(lm_mod,se.fit = TRUE))
+mean((lm_pred$fit >= 0.5) == endometrial$HG)
+lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
+lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
+cbind(glmdr_length,bayes_length,brglm_length,lm_length) /nrow(endometrial)
+```
+## Prediction
+
+```{r}
+n_sample <- nrow(endometrial)
+total_mat_glmdr_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_bayes_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_logistf_test <- matrix(NA,nrow=n_sample,ncol=4)
+total_mat_linear_test <- matrix(NA,nrow=n_sample,ncol=4)
+numCores <- detectCores()
+registerDoParallel(numCores)
+y_idx <- which(names(glmdr_mod$om$model) == paste(formula(glmdr_mod$om))[2])
+dat <- glmdr_mod$om$model
+#glmdr
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  glmdr_mod <- glmdr(HG~.,data=training, family="binomial")
+  ret2 <- predict(glmdr_mod,newdata = testing_X, alpha=0.05,crit="AICc",interval = "wilson")
+  total_mat_glmdr_test[i,1] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 1) #true positive
+  total_mat_glmdr_test[i,2] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 0) #true negative
+  total_mat_glmdr_test[i,3] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 0) #false positive
+  total_mat_glmdr_test[i,4] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 1) #false negative
+  total_mat_glmdr_test[i,]
+}
+total_mat_glmdr_test <- do.call(rbind,ret)
 ```
 
+```{r, eval=FALSE}
+#bayesglm
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  bayesglm_mod <- bayesglm(HG~.,data=training, family="binomial")
+  ret2 <- predict(bayesglm_mod, newdata= testing_X, type="response")
+  total_mat_bayes_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_bayes_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_bayes_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_bayes_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative
+  total_mat_bayes_test[i,]
+}
+total_mat_bayes_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#logistf
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  brglm_mod <- glm(HG~.,data=training,family = "binomial", method = "brglmFit", type = "MPL_Jeffreys")
+  ret2 <- predict(brglm_mod, newdata= testing_X, type="response")
+  total_mat_logistf_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_logistf_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_logistf_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_logistf_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative    
+  total_mat_logistf_test[i,]
+}
+total_mat_logistf_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+#OLS
+ret <- foreach(i=1:n_sample) %dopar% {
+  training <- dat[-i,]
+  testing_X <- dat[i,-y_idx,drop=FALSE]
+  testing_Y <- dat[i,y_idx]
+  lm_mod <- lm(HG~.,data=training)
+  ret2 <- predict(lm_mod, newdata= testing_X, type="response")
+  total_mat_linear_test[i,1] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_linear_test[i,2] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_linear_test[i,3] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_linear_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative
+  total_mat_linear_test[i,]
+}
+total_mat_linear_test <- do.call(rbind,ret)
+```
+
+```{r, eval=FALSE}
+sum(colSums(total_mat_glmdr_test[,1:4])[1:2]) / sum(colSums(total_mat_glmdr_test[,1:4])) # glmdr
+
+sum(colSums(total_mat_bayes_test[,1:4])[1:2]) / sum(colSums(total_mat_bayes_test[,1:4])) # bayesglm
+
+sum(colSums(total_mat_logistf_test[,1:4])[1:2]) / sum(colSums(total_mat_logistf_test[,1:4])) # logistf
+
+sum(colSums(total_mat_linear_test[,1:4])[1:2]) / sum(colSums(total_mat_linear_test[,1:4])) # linear
+```
 
 # Maize data
 
@@ -278,7 +679,7 @@ inference(glmdr_mod)
 ```{r}
 bayes_mod <- bayesglm(Kernel.color~.,data=dat,family="binomial")
 glmdr_mod <- glmdr(Kernel.color~.,data=dat,family="binomial")  
-brglm_mod <- glm(Kernel.color~.,data=dat, family = "binomial", method = "brglmFit", type = "MPL_Jeffreys")
+#brglm_mod <- glm(Kernel.color~.,data=dat, family = "binomial", method = "brglmFit", type = "MPL_Jeffreys")
 #brglm does not converge
 logistif_mod <- logistf(Kernel.color~.,data=dat, family = "binomial")
 lm_mod <- lm(Kernel.color~.,data=dat)
@@ -293,7 +694,7 @@ logistf_CI <- binom.confint(logistif_pred,n=1,methods="wilson")[,c(5,6)]
 logistf_length <- sum(as.matrix(logistf_CI) %*% c(-1,1))
 
 mean(c((predict(glmdr_mod$om,type="response") >= 0.5)[!glmdr_mod$linearity] == dat$Kernel.color[!glmdr_mod$linearity],(predict(glmdr_mod$lcm,type="response") >= 0.5) == dat$Kernel.color[glmdr_mod$linearity]))
-glmdr_CI <- binom.confint(predict(glmdr_mod$om,type="response")[!glmdr_mod$linearity],n=1,methods="wilson")[,c(5,6)]
+glmdr_CI <- inference(glmdr_mod)
 glmdr_CI <- rbind(glmdr_CI,binom.confint(predict(glmdr_mod$lcm,type="response"),n=1,methods="wilson")[,c(5,6)])
 glmdr_length <- sum(as.matrix(glmdr_CI) %*% c(-1,1))
 
@@ -302,7 +703,7 @@ mean( (lm_pred$fit >= 0.5) == dat$Kernel.color)
 lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
 lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
 
-cbind(glmdr_length,bayes_length,logistf_length,lm_length)
+cbind(glmdr_length,bayes_length,logistf_length,lm_length) / nrow(dat)
 ```
 
 ## Prediction & Comparison
