@@ -96,8 +96,16 @@ predict.glmdr <- function(object, newdata = NULL, crit="BIC",alpha=0.05, interva
     }
     phat_star <- w0 * phat_y0 + w1 * phat_y1
     #5. construct CIs with respect to phat*
-    n <- nrow(new_0)
-    ret_mat[i,] <- as.matrix(binom.confint(x=phat_star,1,conf.level =(1-alpha),methods=interval)[5:6])
+    q <- 1-phat_star 
+    n_sample <- 1
+    z_val <- qnorm(p = alpha / 2, lower.tail = FALSE)
+    part1 <- 1/(1+(z_val^2/n_sample))
+    part2 <- phat_star+(z_val^2/(2*n_sample))
+    part3 <- z_val/(1+(z_val^2/n_sample))
+    part4 <- sqrt(((phat_star*q)/n_sample)+z_val^2/(4*n_sample^2))
+    lower <- part1*part2 - part3*part4
+    upper <- part1*part2 + part3*part4
+    ret_mat[i,] <- cbind(lower,upper)
   }
   
   colnames(ret_mat) <- c("lower","upper")

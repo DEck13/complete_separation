@@ -59,7 +59,7 @@ For more details, please see:
   
 <br>
 
-  Eck, D.J. and Geyer, C.J. (submitted)
+  Eck, D.J. and Geyer, C.J. (2021)
   
   Computationally efficient likelihood inference in exponential families when the maximum likelihood estimator does not exist.
   
