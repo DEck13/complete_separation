@@ -55,7 +55,7 @@ We implemented our methodology in R package $\texttt{glmdr}$. We used R version 
 
 \subsection{Data}
 
-We provide prediction and inference results for the maize data as well as an extensive set of examples. These include: 
+We provide inference and prediction results for the maize data as well as an extensive set of examples. These include: 
 
 \noindent\textbf{Complete separation}: We first analyze the \cite{agresti_categorical_2013} example discussed in Section~\ref{sec:complete_separation}. \\ %Our logistic model says that its MLE lie on the infinity and its standard error goes to infinity as well. \\
 
@@ -65,7 +65,7 @@ We provide prediction and inference results for the maize data as well as an ext
 
 \noindent\textbf{Quadratic logistic regression model}: This example comes from Section 2.2 of Geyer [\citeyear{Geyer2009}]. Let $y_i =1$ for $ 12 < x_i < 24 $ and $y_i = 0$, otherwise. Also, consider the following quadratic model: 
 $$\text{logit}(p_i) = \beta_0 + \beta_1 x_i + \beta_2 x_i^2.$$
-In this case, MLE does not exist when we fit the logistic model using $\texttt{glm}$ and it complains that the algorithm did not converge. We demonstrate how to compute the one-sided confidence intervals for mean value parameters for this example in the supplementary material. \\
+In this case, maximum likelihood estimate (MLE) does not exist when we fit the logistic model using $\texttt{glm}$ and it complains that the algorithm did not converge. We demonstrate how to compute the one-sided confidence intervals for mean value parameters for this example in the supplementary material. \\
 
 \noindent\textbf{Endometrial Cancer Study}: \cite{Heinze2002} firstly investigated the endometrial data set (n = 79), which was originally provided by Dr. Asseryanis from the Vienna University Medical School. The main purpose of this study was to describe histology of cases (HG) in terms of three risk factors: neovasculation (NV), endometrium height (EH) and pulsatility index of arteria uterina (PI). 30 patients was classified grading 0-II for histology (HG = 1) and 49 patients for grading III-IV (HG = 0). There are 13 patients who has neovasculization (NV = 1) and absent for 66 patients (NV = 0). Pulsatility index (PI) ranges from 0 to 49 with mean of 17.38 and median of 16.00, and endometirum height (EH) ranges from 0.27 to 3.61 with mean of 1.662 and median of 1.640. In this example, we observe the quasi-complete separation in NV.  \\
 
@@ -137,7 +137,7 @@ When there is complete separation, the parameter estimates $\hat\beta$ as at inf
     \caption{\textbf{Left panel}: Log likelihood values of logistic model at different working estimates. Blue dot represents the log likelihood value at each iteration. \textbf{Right panel:} Zoom in view of a log likelihood values of logistic model where log of norm of working estimates lie between 4.5 and 5.}\label{Fig:asymptotes}
 \end{figure}
 
-Quasi-complete separation is another case of separation that there are both a success and a failure on the hyperplane that separates the successes from the failures \sqcitep{lesaffre_albert_1989}. For instance, we can consider additional two points that $x = 50$ with $y=1$ and $y=0$ to the previous complete separation example. That is, we have $y_i = 0$ for $x \leq 50$ and $y_i =0$ for $x \geq 50$. In this case, the maximized log likelihood is always negative and we experience same phenomenon as the complete separation case.
+Quasi-complete separation is another case of separation that there are both a success and a failure on the hyperplane that separates the successes from the failures \sqcitep{lesaffre_albert_1989}. For instance, we can consider additional two points that $x = 50$ with $y=1$ and $y=0$ to the previous complete separation example. That is, we have $y_i = 0$ for $x \leq 50$ and $y_i =1$ for $x \geq 50$. In this case, the maximized log likelihood is always negative and we experience same phenomenon as the complete separation case.
 
 \subsection{One-Sided Confidence Interval}
 We use one-sided confidence intervals for the logistic model's mean value parameters to explain the uncertainty of estimation. Original concept can be found in Section 3.16 of Geyer's paper [\citeyear{Geyer2009}] and implementation details can be found in Section 4.3 of \citeauthor{Eck2021}'s work [\citeyear{Eck2021}]. Briefly, we construct confidence interval for mean value parameters such that one endpoint is observed response variable (i.e., lower bound if $y_i=0$ and upper bound if $y_i=1$) and the other endpoint is obtained by solving the optimization problem:
@@ -148,7 +148,7 @@ We use one-sided confidence intervals for the logistic model's mean value parame
     \text{subject to } & \sum_{i \in I}[y_{i} \log{(p_i)} + (1 - y_i) \log{(1-p_{i}})] - \log{(\alpha) \geq 0}.
 \end{split}
 \end{equation}
-where $\theta_k = x_k^T\beta$ for any $k \in I$, $\textit{I}$ is a index of problematic points that cause the separation, $p$ is a mean value parameters, and $\alpha$ is a significance level. For example, Figure \ref{Fig:One_sided_CI} shows the one-sided confidence interval for the complete separation example we discussed in Section \ref{sec:complete_separation}. We can see the confidence interval increases as $x$ increases until $x = 40$ then it starts to decrease as $x$ increases. Also, we have a widest interval where $x = 40$ and $x = 60$. It means our uncertainty on estimation keep increases from $x=10$ to $x=40$ and we have the highest uncertainty near the separation occurs. Then it diminishes as it furthers away from the boundary of the separation. In $\texttt{glmdr}$, $\texttt{inference}$ function provides this confidence intervals using the sequential quadratic programming (SQP) to solve the constrained nonlinear problem \eqref{CI_logistic}. 
+where $\theta_k = x_k^T\beta$ for any $k \in I$, $\textit{I}$ is a index of problematic points that cause the separation, $p$ is a mean value parameters, and $\alpha$ is a significance level. For example, Figure \ref{Fig:One_sided_CI} shows the one-sided confidence interval for the complete separation example we discussed in Section \ref{sec:complete_separation}. We can see the confidence interval increases as $x$ increases until $x = 40$ then it starts to decrease as $x$ increases from $x = 60$. Also, we have a widest interval where $x = 40$ and $x = 60$ with $1-\alpha$. It means our uncertainty on estimation keep increases from $x=10$ to $x=40$ and we have the highest uncertainty near the separation occurs. Then it diminishes as it furthers away from the boundary of the separation. In $\texttt{glmdr}$, $\texttt{inference}$ function provides this confidence intervals using the sequential quadratic programming (SQP) to solve the constrained nonlinear problem \eqref{CI_logistic}. 
 
 \begin{figure}[!ht]
   \centering
@@ -168,6 +168,7 @@ $$w_j = \frac{{\exp(-\frac{IC_j}{2})}}{\exp(-\frac{IC_1}{2})+\exp(-\frac{IC_2}{2
 
 
 \subsection{Estimation}
+\label{sec:estimation}
 
 In Maize data, we fit the logistic model where the response variable is kernel color. We dropped 5 markers out of 24 markers due to the collinearity issue and thus we use the population structures and 19 markers for the explanatory variables. We compare the in-sample accuracy and total length of confidence intervals among $\texttt{glmdr}$, $\texttt{bayesglm}$ \sqcitep{Gelman2008}, $\texttt{logistf}$ \sqcitep{Heinze2002} (we tested $\texttt{brglm2}$ \sqcitep{Kosmidis2009} but algorithm did not converge. Instead, we used $\texttt{logistf}$, which was equivalent to $\texttt{brglm2}$ with type of score adjustment as a maximum penalized likelihood with powers of the Jeffreys prior as a penalty) and multiple linear model. We report the average length of one-sided confidence interval for $\texttt{glmdr}$ and average length of Wilson intervals for each predicted probability from $\texttt{bayesglm}$,  $\texttt{logistf}$ and linear models for fair comparison (since the predicted value of linear model does not have to fall into $[0,1]$ range, we assign $1$ for any predicted values greater than $1$ and $0$ for negative values). In Table \ref{Tab:estimation}, we can see all model performs comparably but $\texttt{glmdr}$ provides narrowest length of confidence intervals which indicate the inference result of $\texttt{glmdr}$ is least uncertain.
 
@@ -177,8 +178,8 @@ In Maize data, we fit the logistic model where the response variable is kernel c
     \resizebox{\columnwidth}{!}{
     \begin{threeparttable}
     \begin{tabular}{lcccccccc}
-    & \multicolumn{1}{l}{glmdr\tnote{1}} & \multicolumn{1}{l}{bayesglm\tnote{2}} & \multicolumn{1}{l}{logistf\tnote{3} / brglm2\tnote{4}} & \multicolumn{1}{l}{linear\tnote{5}} & \multicolumn{1}{l}{glmdr} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{logistf / brglm2} & \multicolumn{1}{l}{linear}  \\
     & \multicolumn{4}{c}{in-sample accuracy} &\multicolumn{4}{c}{average length of confidence intervals}\\ 
+    & \multicolumn{1}{l}{glmdr\tnote{1}} & \multicolumn{1}{l}{bayesglm\tnote{2}} & \multicolumn{1}{l}{logistf\tnote{3} / brglm2\tnote{4}} & \multicolumn{1}{l}{linear\tnote{5}} & \multicolumn{1}{l}{glmdr} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{logistf / brglm2} & \multicolumn{1}{l}{linear}  \\
     \hline
     Complete Separation & 100 \% & 100 \% & 100 \% & 100 \% & 0.55 & 0.83 & 0.84 & 0.83 \\
     Quasi Separation & 90 \% & 90 \% & 90 \% & 90 \% & 0.42 & 0.84 & 0.84 & 0.84 \\
@@ -198,16 +199,17 @@ In Maize data, we fit the logistic model where the response variable is kernel c
 \end{table}
 
 \subsection{Prediction}
+\label{sec:prediction}
 
-We use the leave-one-out cross validation (LOOCV) for prediction. This setting is the most suitable as we want to predict the kernel color of new maize given our data. In Table \ref{Tab:prediction}, we can see all models show similar performance. 
+We use the leave-one-out cross validation (LOOCV) for prediction. This setting is the most suitable as we want to predict the kernel color of new maize given our data. In Table \ref{Tab:prediction}, we can see all models show similar performance. [Possibly, we can discuss more performance of $\texttt{glmdr}$ like why what happened in complete separation example, 87.5\% and 85.46 \% in Maize data]
 
 \begin{table}[!ht]
 \caption{Prediction results for all examples.}\label{Tab:prediction}
     \centering
     \begin{threeparttable}
         \begin{tabular}{lcccccccc}
-        & \multicolumn{1}{l}{glmdr\tnote{1}} & \multicolumn{1}{l}{bayesglm\tnote{2}} & \multicolumn{1}{l}{logistf\tnote{3} / brglm2\tnote{4}} & \multicolumn{1}{l}{linear\tnote{5}}  \\
         & \multicolumn{4}{c}{out-of-sample accuracy} \\ 
+        & \multicolumn{1}{l}{glmdr\tnote{1}} & \multicolumn{1}{l}{bayesglm\tnote{2}} & \multicolumn{1}{l}{logistf\tnote{3} / brglm2\tnote{4}} & \multicolumn{1}{l}{linear\tnote{5}}  \\
         \hline
         Complete Separation & 87.5 \% & 100 \% & 100 \% & 100 \%\\
         Quasi Separation & 80 \% & 80 \% & 80 \% & 80 \%\\
@@ -226,9 +228,9 @@ We use the leave-one-out cross validation (LOOCV) for prediction. This setting i
 
 \section{Discussion}
 
-In the classification problem, the logistic model is one of the most common statistical model we can attempt. Although linear model is attractive option to use because of its easiness and handiness, the binary response variable makes the linear model violate necessary assumptions such as homoscedasticity and linearity (i.e. Gauss-Markov assumptions) as well as normality. Therefore, even though results from Section 3.2 and 3.3 display that the performance of linear model is comparable to the logistic models, we can not fully utilize asymptotic properties of linear model and make a proper inference such as significance tests for coefficients.
+In the classification problem, the logistic model is one of the most common statistical model we can attempt. Although linear model is attractive option to use because of its easiness and handiness, the binary response variable makes the linear model violate necessary assumptions such as homoscedasticity and linearity (i.e. Gauss-Markov assumptions) as well as normality. Therefore, even though results from Section \ref{sec:estimation} and \ref{sec:prediction} display that the performance of linear model is comparable to the logistic models, we can not fully utilize asymptotic properties of linear model and make a proper inference such as significance tests for coefficients.
 
-On the other hands, we can see all logistic models in Section 3.2 and 3.3 perform similarly despite of different approaches and techniques. The main difference between $\texttt{glmdr}$ and other methods is that $\texttt{glmdr}$ is only model that solves the separation problem within the maximum likelihood estimation framework under the subset of the original model, called limiting conditional model (LCM). It estimates the probability of success by finding the MLE in the Barndorff-Nielsen completion [\citeyear{barndorff-nielsen_1978}] based on approximate null eigenvectors of the Fisher information matrix. Hence, the way $\texttt{glmdr}$ handles the separation problem is the true remedy to the traditional $\texttt{glm}$'s issue causing from a separation problem. Meanwhile, all other methods solve the separation problem by switching the problem settings. For example, $\texttt{bayesglm}$ uses a Bayesian approach which scales the data first and then placing Cauchy distribution as a prior distribution on the coefficients and $\texttt{logistf}$ (similar to $\texttt{brglm2}$) modifies the score function to produce finite coefficients. As a result, it is hard to see their outputs as a true solution for separation problem of $\texttt{glm}$.
+On the other hands, we can see all logistic models in Section \ref{sec:estimation} and \ref{sec:prediction} perform similarly despite of different approaches and techniques. The main difference between $\texttt{glmdr}$ and other methods is that $\texttt{glmdr}$ is only model that solves the separation problem within the maximum likelihood estimation framework under the subset of the original model, called limiting conditional model (LCM). It estimates the probability of success by finding the MLE in the Barndorff-Nielsen completion [\citeyear{barndorff-nielsen_1978}] based on approximate null eigenvectors of the Fisher information matrix. Hence, the way $\texttt{glmdr}$ handles the separation problem is the true remedy to the traditional $\texttt{glm}$'s issue causing from a separation problem. Meanwhile, all other methods solve the separation problem by switching the problem settings. For example, $\texttt{bayesglm}$ uses a Bayesian approach which scales the data first and then placing Cauchy distribution as a prior distribution on the coefficients and $\texttt{logistf}$ (similar to $\texttt{brglm2}$) modifies the score function to produce finite coefficients. As a result, it is hard to see their outputs as a true solution for separation problem of $\texttt{glm}$.
 
 In conclusion, when separation issue present in the logistic model, one can consider using the $\texttt{glmdr}$ which has the advantage in inference because it performs maximum likelihood estimation under the specified model. We see that this corresponds to the smallest confidence intervals in our examples, as expected. $\texttt{bayesglm}$ is suitable for prediction thanks to its low computational cost yet high accuracy. $\texttt{logistf}$ or $\texttt{brglm2}$ may be least preferable methods because they are computationally unstable and expensive.
 
