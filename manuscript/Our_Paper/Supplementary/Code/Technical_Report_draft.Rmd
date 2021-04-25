@@ -98,18 +98,80 @@ mean((predict(bayes_mod,type="response") >= 0.5) == y)
 bayes_CI <- binom.confint(predict(bayes_mod,type="response"),n=1,methods="wilson")[,c(5,6)]
 bayes_length <- sum(as.matrix(bayes_CI) %*% c(-1,1))
 
+
+mean((predict(bayes_mod,type="response") >= 0.5) == quadratic$y)
+bayes_CI <- binom.confint(predict(bayes_mod,type="response"),n=1,methods="wilson")[,c(5,6)]
+bayes_pred <- predict(bayes_mod,type="response",se.fit=TRUE)
+bayes_length <- sum(as.matrix(bayes_CI) %*% c(-1,1))
+
+
 mean((predict(brglm_mod,type="response") >= 0.5) == y)
 brglm_CI <- binom.confint(predict(brglm_mod,type="response"),n=1,methods="wilson")[,c(5,6)]
 brglm_length <- sum(as.matrix(brglm_CI) %*% c(-1,1))
 
 mean((predict(glmdr_mod$om,type="response") >= 0.5) == y)
 glmdr_CI <- inference(glmdr_mod)
+glmdr_pred <- predict(glmdr_mod$om,type="response",se.fit=TRUE)
+glmdr_CI <- cbind(glmdr_pred$fit - 1.96 * glmdr_pred$se.fit,glmdr_pred$fit + 1.96 * glmdr_pred$se.fit)
+glmdr_CI <- binom.confint(predict(glmdr_mod$om,type="response"),n=1,methods="wilson")[,c(5,6)]
+
+glmdr_CI <- 
 glmdr_length <- sum(as.matrix(glmdr_CI) %*% c(-1,1))
 
 lm_pred <- (predict(lm_mod,se.fit = TRUE))
+lm_pred$fit <- ifelse(lm_pred$fit<=0, 0,lm_pred$fit)
+lm_pred$fit <- ifelse(lm_pred$fit>=1, 1,lm_pred$fit)
 mean((lm_pred$fit >= 0.5) == y)
-lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
+lm_CI <- binom.confint(lm_pred$fit,n=1,methods="wilson")[,c(5,6)]
 lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
+
+p1 <- ggplot(data=as.data.frame(cbind(x,y,glmdr_CI)),aes(x=x,y=y)) +
+  geom_point(size=3) +
+  geom_point(aes(x=x, y=lower),size=3,pch=1) +
+  geom_point(aes(x=x, y=upper),size=3,pch=1) +
+  geom_point(size=3) +
+  geom_segment(aes(x = x, y = y, xend = x, yend = lower)) +
+  geom_segment(aes(x = x, y = y, xend = x, yend = upper)) +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"), axis.title=element_text(size=15))+
+  labs(x="x", y= TeX('$\\textbf{\\hat{p}}$')) +
+  scale_x_continuous(breaks = x)+
+  scale_y_continuous(breaks = c(0.0,1.0))
+
+p2 <- ggplot(data=as.data.frame(cbind(x,y,glmdr_CI)),aes(x=x,y=y)) +
+  geom_point(size=3) +
+  geom_point(aes(x=x, y=lower),size=3,pch=1) +
+  geom_point(aes(x=x, y=upper),size=3,pch=1) +
+  geom_point(size=3) +
+  geom_segment(aes(x = x, y = y, xend = x, yend = lower)) +
+  geom_segment(aes(x = x, y = y, xend = x, yend = upper)) +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"), axis.title=element_text(size=15))+
+  labs(x="x", y= TeX('$\\textbf{\\hat{p}}$')) +
+  scale_x_continuous(breaks = x)+
+  scale_y_continuous(breaks = c(0.0,1.0))
+
+p3 <- ggplot(data=as.data.frame(cbind(x,y,glmdr_CI)),aes(x=x,y=y)) +
+  geom_point(size=3) +
+  geom_point(aes(x=x, y=lower),size=3,pch=1) +
+  geom_point(aes(x=x, y=upper),size=3,pch=1) +
+  geom_point(size=3) +
+  geom_segment(aes(x = x, y = y, xend = x, yend = lower)) +
+  geom_segment(aes(x = x, y = y, xend = x, yend = upper)) +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"), axis.title=element_text(size=15))+
+  labs(x="x", y= TeX('$\\textbf{\\hat{p}}$')) +
+  scale_x_continuous(breaks = x)+
+  scale_y_continuous(breaks = c(0.0,1.0))
+
+p4 <- ggplot(data=as.data.frame(cbind(x,y,lm_CI)),aes(x=x,y=y)) +
+  geom_point(size=3) +
+  geom_point(aes(x=x, y=lower),size=3,pch=1) +
+  geom_point(aes(x=x, y=upper),size=3,pch=1) +
+  geom_point(size=3) +
+  geom_segment(aes(x = x, y = lower, xend = x, yend = upper)) +
+  theme(panel.background = element_rect(fill = "white", colour = "grey50"), axis.title=element_text(size=15))+
+  labs(x="x", y= TeX('$\\textbf{\\hat{p}}$')) +
+  scale_x_continuous(breaks = x)
+
 
 cbind(glmdr_length,bayes_length,brglm_length,lm_length) / length(x)
 ```
@@ -261,6 +323,14 @@ mean((lm_pred$fit >= 0.5) == y)
 lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
 lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
 
+
+lm_pred <- (predict(lm_mod,se.fit = TRUE))
+lm_pred$fit <- ifelse(lm_pred$fit<=0, 0,lm_pred$fit)
+lm_pred$fit <- ifelse(lm_pred$fit>=1, 1,lm_pred$fit)
+mean((lm_pred$fit >= 0.5) == y)
+lm_CI <- binom.confint(lm_pred$fit,n=1,methods="wilson")[,c(5,6)]
+lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
 cbind(glmdr_length,bayes_length,brglm_length,lm_length) / length(x)
 ```
 ## Prediction
@@ -386,6 +456,10 @@ lm_mod <- lm(y~x+I(x^2),data=quadratic)
 
 mean((predict(bayes_mod,type="response") >= 0.5) == quadratic$y)
 bayes_CI <- binom.confint(predict(bayes_mod,type="response"),n=1,methods="wilson")[,c(5,6)]
+bayes_pred <- predict(bayes_mod,se.fit=TRUE)
+bayes_CI_Wald <- invlogit(cbind(bayes_pred$fit - 1.96 * bayes_pred$se.fit,bayes_pred$fit + 1.96 * bayes_pred$se.fit))
+sum(apply(bayes_CI_Wald,1,diff))
+sum(apply(bayes_CI,1,diff))
 bayes_length <- sum(as.matrix(bayes_CI) %*% c(-1,1))
 
 mean((predict(brglm_mod,type="response") >= 0.5) == quadratic$y)
@@ -400,6 +474,14 @@ lm_pred <- (predict(lm_mod,se.fit = TRUE))
 mean((lm_pred$fit >= 0.5) == quadratic$y)
 lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
 lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
+lm_pred <- (predict(lm_mod,se.fit = TRUE))
+lm_pred$fit <- ifelse(lm_pred$fit<=0, 0,lm_pred$fit)
+lm_pred$fit <- ifelse(lm_pred$fit>=1, 1,lm_pred$fit)
+mean((lm_pred$fit >= 0.5) == quadratic$y)
+lm_CI <- binom.confint(lm_pred$fit,n=1,methods="wilson")[,c(5,6)]
+lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
 
 cbind(glmdr_length,bayes_length,brglm_length,lm_length) / nrow(quadratic)
 ```
@@ -430,6 +512,7 @@ ret <- foreach(i=1:n_sample) %dopar% {
   total_mat_glmdr_test[i,]
 }
 total_mat_glmdr_test <- do.call(rbind,ret)
+sum(colSums(total_mat_glmdr_test[,1:4])[1:2]) / sum(colSums(total_mat_glmdr_test[,1:4])) # glmdr
 ```
 
 ```{r, eval=FALSE}
@@ -447,6 +530,7 @@ ret <- foreach(i=1:n_sample) %dopar% {
   total_mat_bayes_test[i,]
 }
 total_mat_bayes_test <- do.call(rbind,ret)
+
 ```
 
 ```{r, eval=FALSE}
@@ -521,6 +605,9 @@ lm_mod <- lm(HG~.,data=endometrial)
 
 mean((predict(bayes_mod,type="response") >= 0.5) == endometrial$HG)
 bayes_CI <- binom.confint(predict(bayes_mod,type="response"),n=1,methods="wilson")[,c(5,6)]
+bayes_pred <- predict(bayes_mod,se.fit=TRUE)
+bayes_CI_Wald <- cbind(bayes_pred$fit - 1.96 * bayes_pred$se.fit,bayes_pred$fit + 1.96 * bayes_pred$se.fit)
+bayes_CI_Wald <- invlogit(bayes_CI_Wald)
 bayes_length <- sum(as.matrix(bayes_CI) %*% c(-1,1))
 
 mean((predict(brglm_mod,type="response") >= 0.5) == endometrial$HG)
@@ -533,10 +620,26 @@ glmdr_CI <- inference(glmdr_mod)
 glmdr_CI <- rbind(glmdr_CI,binom.confint(predict(glmdr_mod$lcm,type="response"),n=1,methods="wilson")[,c(5,6)])
 glmdr_length <- sum(as.matrix(glmdr_CI) %*% c(-1,1))
 
+glmdr_CI_Wilson <- binom.confint(predict(glmdr_mod$lcm,type="response"),n=1,methods="wilson")[,c(5,6)]
+glmdr_pred <- predict(glmdr_mod$om,se.fit=TRUE)
+glmdr_CI_Wald <- invlogit(cbind(glmdr_pred$fit - 1.96 * glmdr_pred$se.fit,glmdr_pred$fit + 1.96 * glmdr_pred$se.fit))
+
+sum(apply(glmdr_CI_Wald,1,diff))
+sum(apply(glmdr_CI_Wilson,1,diff))
+
 lm_pred <- (predict(lm_mod,se.fit = TRUE))
 mean((lm_pred$fit >= 0.5) == endometrial$HG)
 lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
 lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
+
+lm_pred <- (predict(lm_mod,se.fit = TRUE))
+lm_pred$fit <- ifelse(lm_pred$fit<=0, 0,lm_pred$fit)
+lm_pred$fit <- ifelse(lm_pred$fit>=1, 1,lm_pred$fit)
+mean((lm_pred$fit >= 0.5) == endometrial$HG)
+lm_CI <- binom.confint(lm_pred$fit,n=1,methods="wilson")[,c(5,6)]
+lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
 
 cbind(glmdr_length,bayes_length,brglm_length,lm_length) /nrow(endometrial)
 ```
@@ -640,6 +743,7 @@ Xind <- 11:ncol(corn_dat)
 foo <- corn_dat[, c(10,8,Xind[-c(15,19,22,23,24)])] 
 foo$Pop.structure <- factor(foo$Pop.structure) 
 dat <- data.frame(foo)
+dat[,-c(1,2)] <- scale(dat[,-c(1,2)]) #scale the data
 ```
 
 ## Motivation
@@ -703,10 +807,19 @@ mean( (lm_pred$fit >= 0.5) == dat$Kernel.color)
 lm_CI <- cbind(lm_pred$fit - (1.96 * lm_pred$se.fit),lm_pred$fit + (1.96 * lm_pred$se.fit))
 lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
 
+lm_pred <- (predict(lm_mod,se.fit = TRUE))
+lm_pred$fit <- ifelse(lm_pred$fit<=0, 0,lm_pred$fit)
+lm_pred$fit <- ifelse(lm_pred$fit>=1, 1,lm_pred$fit)
+mean((lm_pred$fit >= 0.5) == dat$Kernel.color)
+lm_CI <- binom.confint(lm_pred$fit,n=1,methods="wilson")[,c(5,6)]
+lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
+
+
 cbind(glmdr_length,bayes_length,logistf_length,lm_length) / nrow(dat)
 ```
 
 ## Prediction & Comparison
+
 
 ```{r, eval=FALSE}
 n_sample <- nrow(dat)
@@ -734,6 +847,8 @@ ret <- foreach(i=1:n_sample) %dopar% {
   total_mat_glmdr_test[i,]
 }
 total_mat_glmdr_test <- do.call(rbind,ret)
+
+sum(colSums(total_mat_glmdr_test[,4:7])[1:2]) / sum(colSums(total_mat_glmdr_test[,4:7])) # glmdr
 ```
 
 ```{r, eval=FALSE}
@@ -758,7 +873,7 @@ total_mat_bayes_test <- do.call(rbind,ret)
 ```{r, eval=FALSE}
 #logistf
 start_time <- proc.time()
-ret <- foreach(i=1:8) %dopar% {
+ret <- foreach(i=1:n_sample) %dopar% {
   training <- dat[-i,]
   testing_X <- dat[i,-y_idx,drop=FALSE]
   testing_Y <- dat[i,y_idx]

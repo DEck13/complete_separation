@@ -23,6 +23,7 @@
 \usepackage{threeparttable}
 \usepackage{booktabs, caption, makecell}
 \usepackage{graphics}
+\usepackage{threeparttable}
 
 \newtheorem{thm}{Theorem}
 \newcommand{\Gamlim}{$\Gamma_{\text{lim} \text{ }}$}
@@ -46,13 +47,29 @@
 \smallskip
 \noindent \textbf{Key Words:} list of keywords
 
-%% LEFT OVER %%
 
-\section{Material}
+\section{Materials and Method}
 
+\subsection{Material}
 We implemented our methodology in R package $\texttt{glmdr}$. We used R version 3.6.1 and the required R packages for $\texttt{glmdr}$ are $\texttt{binom}$ version 1.1 and $\texttt{nloptr}$ version 1.2.2.2. Further details are included in the technical reports.
 
-\section{Method}
+\subsection{Data}
+
+We provide prediction and inference results for the maize data as well as an extensive set of examples. These include: 
+
+\noindent\textbf{Complete separation}: We first analyze the \cite{agresti_categorical_2013} example discussed in Section~\ref{sec:complete_separation}. \\ %Our logistic model says that its MLE lie on the infinity and its standard error goes to infinity as well. \\
+
+\noindent\textbf{Quasi-complete separation}: 
+ We analyze the \cite{agresti_categorical_2013} example with two points added, a success and a failure at $x = 50$. \\
+
+
+\noindent\textbf{Quadratic logistic regression model}: This example comes from Section 2.2 of Geyer [\citeyear{Geyer2009}]. Let $y_i =1$ for $ 12 < x_i < 24 $ and $y_i = 0$, otherwise. Also, consider the following quadratic model: 
+$$\text{logit}(p_i) = \beta_0 + \beta_1 x_i + \beta_2 x_i^2.$$
+In this case, MLE does not exist when we fit the logistic model using $\texttt{glm}$ and it complains that the algorithm did not converge. We demonstrate how to compute the one-sided confidence intervals for mean value parameters for this example in the supplementary material. \\
+
+\noindent\textbf{Endometrial Cancer Study}: \cite{Heinze2002} firstly investigated the endometrial data set (n = 79), which was originally provided by Dr. Asseryanis from the Vienna University Medical School. The main purpose of this study was to describe histology of cases (HG) in terms of three risk factors: neovasculation (NV), endometrium height (EH) and pulsatility index of arteria uterina (PI). 30 patients was classified grading 0-II for histology (HG = 1) and 49 patients for grading III-IV (HG = 0). There are 13 patients who has neovasculization (NV = 1) and absent for 66 patients (NV = 0). Pulsatility index (PI) ranges from 0 to 49 with mean of 17.38 and median of 16.00, and endometirum height (EH) ranges from 0.27 to 3.61 with mean of 1.662 and median of 1.640. In this example, we observe the quasi-complete separation in NV.  \\
+
+\noindent\textbf{Maize data}: To predict the kernel color of maize, we merged two datasets on accession's name. One dataset comes from \cite{Romay2013}'s work that investigates the genetic constitution of 2,815 maize inbred accessions with 7 types of population structures. [Place for description of the kernel color dataset] The other dataset contains the kernel color of accession where 1 indicates yellow kernel and 0 for white kernel. It has 24 marker genotypes for the DNA surrounding a biologically relevant gene for kernel color. Each marker has value from 0 to 1. In the final dataset, 309 observations have a white kernel and 1,238 for yellow kernel. We have 6 types of population structures: 115 non-stiff stalk, 54 popcorn, 120 stiff stalk, 116 sweet corn, 159 tropical, and 983 unclassified. In this example, there is no separation issues when we use single marker for explanatory variable. However, we have a separation issue for saturated model. In the later part, we mainly focus on this example.
 
 \subsection{Logistic Regression}
 The logistic regression is the special case of the generalized linear model which the response variable follows Bernoulli distribution (i.e., $y \in \{0,1\}$) \sqcitep{GLM_paper}. By convention, we encode 1 as a ``success" and 0 as a ``failure." In logistic regression the conditional success probability at a particular $x$ is modeled as
@@ -70,11 +87,11 @@ where $g(x) = \log(\frac{x}{1-x})$ is a logit link (log-odds ratio).
 Therefore, as in classical ordinary least squares (OLS) regression, we can estimate $\beta$ using maximum likelihood estimation and make statistical inferences about regression coefficient estimates via the diagonal elements of the inverse of the Fisher information, which represent the estimated variance of parameters.
 
 
-Unlike in OLS regression, the maximum likelihood estimator $\hat\beta$ is not given in closed form. The log-likelihood function for the logistic regression model is
+Unlike in OLS regression, the parameter estimates $\hat\beta$ are not given in closed form. The log-likelihood function for the logistic regression model is
 \begin{equation}\label{likelihood}
 \log L(\beta|Y) = \sum_{i=1}^{n} y_i\log{(p_i)} + (1-y_i)\log{(1-p_i)},
 \end{equation}
-One then obtains $\hat\beta$ by solving the score function equation
+one then obtains $\hat\beta$ by solving the score function equation
 \begin{equation}\label{logit_Score}
 \frac{\partial \log{L(\beta|Y)}}{\partial \beta} = 
 \sum_{i=1}^{N} (y_i - \log{(p_i)}) x_i^T =
@@ -112,7 +129,7 @@ That is, it occurs when the one or more explanatory variables can perfectly pred
     \caption{Example of complete separation from Section 6.5.1 of \cite{agresti_categorical_2013}. The conventional MLE of a logistic model does not exist.}\label{Fig:Complete_Separation_Example}
 \end{figure}
 
-When there is complete separation, the MLE $\hat\beta$ as at infinity, the iteration based estimation algorithms provide a sequence of estimates that goes to infinity, and the log likelihood becomes flat when evaluated along this sequence. The left panel of Figure \ref{Fig:asymptotes} shows the log likelihood of logistic model for this example with different working estimate from $\texttt{glm}$ function in R. We can see that each iteration, norm of $\beta$ becomes larger and asymptote of the log likelihood value goes to infinity. Also, the right panel of Figure \ref{Fig:asymptotes} displays the log likelihood value still approaches near zero although it looks flat in the  left panel of Figure \ref{Fig:asymptotes}. As a result, the variance of $\hat{\beta_j}$ becomes very large because it comes from the inverse of second derivatives of the likelihood function \eqref{logit_Fisher} and it leads us to unreasonable statistical inference. Unfortunately, none of common statistical software such as R, SAS and Python can handle the separation issue properly and uninformed users sometimes uses the wrong model without knowing it. The \texttt{glmdr} software package \sqcitep{Eck2020} is designed to provide users with a description of the complete separation problem when it occurs, and provide statistical inferences when it occurs.
+When there is complete separation, the parameter estimates $\hat\beta$ as at infinity, the iteration based estimation algorithms provide a sequence of estimates that goes to infinity, and the log likelihood becomes flat when evaluated along this sequence. The left panel of Figure \ref{Fig:asymptotes} shows the log likelihood of logistic model for this example with different working estimate from $\texttt{glm}$ function in R. We can see that each iteration, norm of $\beta$ becomes larger and asymptote of the log likelihood value goes to infinity. The right panel of Figure \ref{Fig:asymptotes} is the zoomed part of the left panel of Figure \ref{Fig:asymptotes} where the log of norm of working estimates is between 4.5 and 5. It displays the log likelihood value still approaches near zero although the left panel of Figure \ref{Fig:asymptotes} looks flat in the same region. In complete separation, the usual statistical inference is not valid. The variance of $\hat{\beta_j}$ becomes very large because it comes from the inverse of second derivatives of the likelihood function \eqref{logit_Fisher}, and the standard error of predicted probabilities are very small which leads to extremely narrow confidence intervals for each observation. Unfortunately, none of common statistical software such as R, SAS and Python can handle the separation issue properly and uninformed users sometimes uses the wrong model without knowing it. The \texttt{glmdr} software package \sqcitep{Eck2021} is designed to provide users with a description of the complete separation problem when it occurs, and provide statistical inferences when it occurs.
 
 \begin{figure}[!ht]
   \centering
@@ -123,7 +140,7 @@ When there is complete separation, the MLE $\hat\beta$ as at infinity, the itera
 Quasi-complete separation is another case of separation that there are both a success and a failure on the hyperplane that separates the successes from the failures \sqcitep{lesaffre_albert_1989}. For instance, we can consider additional two points that $x = 50$ with $y=1$ and $y=0$ to the previous complete separation example. That is, we have $y_i = 0$ for $x \leq 50$ and $y_i =0$ for $x \geq 50$. In this case, the maximized log likelihood is always negative and we experience same phenomenon as the complete separation case.
 
 \subsection{One-Sided Confidence Interval}
-We use one-sided confidence intervals for the logistic model's mean value parameters to explain the uncertainty of estimation. Original concept can be found in Section 3.16 of Geyer's paper [\citeyear{Geyer2009}] and implementation details can be found in Section 4.3 of \citeauthor{Eck2020}'s work [\citeyear{Eck2020}]. Briefly, we construct confidence interval for mean value parameters such that one endpoint is observed response variable (i.e., lower bound if $y_i=0$ and upper bound if $y_i=1$) and the other endpoint is obtained by solving the optimization problem:
+We use one-sided confidence intervals for the logistic model's mean value parameters to explain the uncertainty of estimation. Original concept can be found in Section 3.16 of Geyer's paper [\citeyear{Geyer2009}] and implementation details can be found in Section 4.3 of \citeauthor{Eck2021}'s work [\citeyear{Eck2021}]. Briefly, we construct confidence interval for mean value parameters such that one endpoint is observed response variable (i.e., lower bound if $y_i=0$ and upper bound if $y_i=1$) and the other endpoint is obtained by solving the optimization problem:
 
 \begin{equation} \label{CI_logistic}
 \begin{split}
@@ -141,77 +158,75 @@ where $\theta_k = x_k^T\beta$ for any $k \in I$, $\textit{I}$ is a index of prob
 
 \subsection{Prediction}
 
-Prediction in $\texttt{glmdr}$ framework is different from that of the conventional statistical model because we do not have a finite estimate. Specifically, in the traditional sense, we can compute the predicted value for new data point from the logistic model using $\hat{p}_{pred} = (1 + \exp{(-x_{new}^T \hat{\beta})})^{-1}.$ However, when the complete separation presents, this approach does not work. Therefore, we propose new method for the prediction that we fit two possible models for new data point then compute the weighted conditional probability of a success.
+Prediction in $\texttt{glmdr}$ framework is different from that of the conventional statistical model because we do not have a finite estimate. Specifically, in the traditional sense, we can compute the predicted value for new data point from the logistic model using $\hat{p}_{pred} = (1 + \exp{(-x_{new}^T \hat{\beta})})^{-1}.$ However, when the complete separation presents, this approach does not work. Therefore, we propose a new method for the prediction that we fit two possible models for new data point with different value of a response variable then compute the weighted conditional probability of a success.
 
 Given new data $x_{\text{new}}$ and training set $x_{\text{train}}$, we generate testing set by combing training set and each observation from new data. That is, $x_{i,\text{test}} = x_{\text{train}} \cup x_{i,\text{new}}$
-where $i$ is a index of whole new data. Then, we construct two testing labels that one has $y_{\text{new}}=0$ and the other has $y_{\text{new}}=1$ for new data point. Based on these two datasets, we fit two logistic models to compute the estimated probability of a success for new data points, $\hat{p_1}$ and $\hat{p_2}$. Since we do not know which model produces more probable estimate, we consider the weight of evidence in favor of one of models which originated from the Akaike Weights for the model selection \sqcitep{burnham_anderson_2002}. Let $w_j$ be the weight for model $j$ defined by:
-$$w_j = \frac{{\exp(-\frac{IC_j}{2})}}{\exp(-\frac{IC_1}{2})+\exp(-\frac{IC_2}{2})},$$ 
-where $IC_j$ is the information criteria of model $j$. Then we can calculate the model averaged estimates, $\widehat{p^*} = \sum_{j=1}^2 w_j \hat{p_j}$.
-This averaged estimate is especially useful for prediction in our framework because we can use all predicted values from models we have. For $IC$, we recommend the Akaike Inofrmation Criteria corrected (AICc) because AICc works well in small sample size and converges to AIC when we have large sample size \sqcitep{AICc_Paper}. Lastly, we construct the Wilson intervals because it handles the extreme probability (i.e. $\hat{p} = 0$ or $1$)  better than Wald based intervals \sqcitep{Brown2000}. We can provide the predicted label based on the mean of this Wilson intervals. In our method, we label $1$ if $\widehat{p^*} \geq 0.5$ and $0$ if $\widehat{p^*} < 0.5$. Detailed implementation and examples are given in the supplementary materials.
+where $i$ is a index of whole new data. Then, we construct two testing labels that one has $y_{\text{new}}=0$ and the other has $y_{\text{new}}=1$ for new data point. Based on these two datasets, we fit two logistic models to compute the estimated probability of a success for new data points, $\hat{p_1}$ and $\hat{p_2}$. Since we do not know which model is fitted from the true value of response variable, we compare the weight of evidence for each model based on the Akaike weights for the model selection \sqcitep{burnham_anderson_2002}. Let $w_j$ be the weight for model $j$ defined by:
+$$w_j = \frac{{\exp(-\frac{IC_j}{2})}}{\exp(-\frac{IC_1}{2})+\exp(-\frac{IC_2}{2})},$$ where $IC_j$ is the information criteria of model $j$. Then we can calculate the model averaged estimate, $\widehat{p^*} = \sum_{j=1}^2 w_j \hat{p_j}$. This averaged estimate is especially useful for prediction in our framework because we can use all predicted probabilities from models we have. For $IC$, we recommend the Akaike information criteria corrected (AICc) because Akaike information criteria (AIC) is asymptotically equivalent to choice of model by leave-one-out cross validation \sqcitep{Stone_1977}. Also, Bayesian information criteria (BIC) attempts to find the true model among the sets of candidate models which is not appropriate our prediction framework \sqcitep{schwarz_1978}. Furthermore, AICc works well despite of small sample size and converges to AIC when we have large sample size \sqcitep{AICc_Paper}. We construct the prediction intervals based on Wilson intervals given model averaged predicted value. Wilson intervals [\citeyear{wilson_1927}] are asymmetric unlike the  standard binomial confidence interval. Thus, Wilson intervals show better coverage probability although $\hat{p}$ is near $0$ and $1$ boundaries \sqcitep{Brown2001}. Lastly, we label the mean of this Wilson intervals. In our method, we label $1$ if $\widehat{p^*} \geq 0.5$ and $0$ if $\widehat{p^*} < 0.5$. Detailed implementation and examples are given in the supplementary materials.
 
 \section{Results}
-\subsection{Examples}
 
-We provide prediction and inference results for the maize data as well as an extensive set of examples. These include: 
-
-\noindent\textbf{Complete separation}: We first analyze the \cite{agresti_categorical_2013} example discussed in Section~\ref{sec:complete_separation}. \\ %Our logistic model says that its MLE lie on the infinity and its standard error goes to infinity as well. \\
-
-\noindent\textbf{Quasi-complete separation}: 
- We analyze the \cite{agresti_categorical_2013} example with two points added, a success and a failure at $x = 50$. \\
-
-
-\noindent\textbf{Quadratic logistic regression model}: This example comes from Section 2.2 of Geyer [\citeyear{Geyer2009}]. Let $y_i =1$ for $ 12 < x_i < 24 $ and $y_i = 0$, otherwise. Also, consider the following quadratic model: 
-$$\text{logit}(p_i) = \beta_0 + \beta_1 x_i + \beta_2 x_i^2.$$
-In this case, MLE does not exist when we fit the logistic model using $\texttt{glm}$ and it complains that the algorithm did not converge. We demonstrate how to compute the one-sided confidence intervals for mean value parameters for this example in the supplementary material. \\
-
-\noindent\textbf{Endometrial Cancer Study}: The main purpose of this study was to describe histology of cases (HG) in terms of three risk factors: neovasculation (NV), endometrium height (EH) and pulsatility index of arteria uterina (PI). 30 patients was classified grading 0-II for histology (HG = 0) and 49 patients for grading III-IV (HG = 1). There are 13 patients who has neovasculization (NV = 1) and absent for 66 patients (NV = 0). Pulsatility index (PI) ranges from 0 to 49 with mean of 17.38 and median of 16.00, and endometirum height (EH) ranges from 0.27 to 3.61 with mean of 1.662 and median of 1.640. In this example, we observe the quasi-complete separation in NV. \cite{Heinze2002} firstly investigated the endometrial data set (n = 79), which was originally provided by Dr. Asseryanis from the Vienna University Medical School. \\
-
-\noindent\textbf{Maize data}: To predict the kernel color of maize, we merged two datasets on accession's name. One dataset comes from \cite{Romay2013}'s work that investigates the genetic constitution of 2,815 maize inbred accessions with 7 types of population structures. [Where does the kernel color dataset come from?] The other dataset contains the kernel color of accession where 1 indicates yellow kernel and 0 for white kernel. It has 24 marker genotypes for the DNA surrounding a biologically relevant gene for kernel color. Each marker has value from 0 to 1. In the final dataset, 309 observations have a white kernel and 1,238 for yellow kernel. We have 6 types of population structures: 115 non-stiff stalk, 54 popcorn, 120 stiff stalk, 116 sweet corn, 159 tropical, and 983 unclassified. In this example, there is no separation issues when we use single marker for explanatory variable. However, we have a separation issue for saturated model. In the later part, we mainly focus on this example.
 
 \subsection{Estimation}
 
-We fit the logistic model where the response variable is kernel color. We dropped 5 markers out of 24 markers due to the collinearity issue and thus we use the population structures and 19 markers for the explanatory variables. We compare the in-sample accuracy and total length of confidence intervals among $\texttt{glmdr}$, $\texttt{bayesglm}$ \sqcitep{Gelman2008}, $\texttt{logistf}$ \sqcitep{Heinze2002} (we tested $\texttt{brglm2}$ \sqcitep{Kosmidis2009} but algorithm did not converge. Instead, we used $\texttt{logistf}$, which is equivalent to $\texttt{brglm2}$ with type of score adjustment as a maximum penalized likelihood with powers of the Jeffreys prior as a penalty) and multiple linear model. We use Wilson interval to compute the total length of confidence intervals for logistic models and Wald type confidence intervals for the linear model. In Table \ref{Tab:estimation}, we can see all model performs comparably.
+In Maize data, we fit the logistic model where the response variable is kernel color. We dropped 5 markers out of 24 markers due to the collinearity issue and thus we use the population structures and 19 markers for the explanatory variables. We compare the in-sample accuracy and total length of confidence intervals among $\texttt{glmdr}$, $\texttt{bayesglm}$ \sqcitep{Gelman2008}, $\texttt{logistf}$ \sqcitep{Heinze2002} (we tested $\texttt{brglm2}$ \sqcitep{Kosmidis2009} but algorithm did not converge. Instead, we used $\texttt{logistf}$, which was equivalent to $\texttt{brglm2}$ with type of score adjustment as a maximum penalized likelihood with powers of the Jeffreys prior as a penalty) and multiple linear model. We report the average length of one-sided confidence interval for $\texttt{glmdr}$ and average length of Wilson intervals for each predicted probability from $\texttt{bayesglm}$,  $\texttt{logistf}$ and linear models for fair comparison (since the predicted value of linear model does not have to fall into $[0,1]$ range, we assign $1$ for any predicted values greater than $1$ and $0$ for negative values). In Table \ref{Tab:estimation}, we can see all model performs comparably but $\texttt{glmdr}$ provides narrowest length of confidence intervals which indicate the inference result of $\texttt{glmdr}$ is least uncertain.
 
 \begin{table}[!ht]
 \caption{Model performances for all examples.}\label{Tab:estimation}
 \centering
     \resizebox{\columnwidth}{!}{
+    \begin{threeparttable}
     \begin{tabular}{lcccccccc}
-    & \multicolumn{1}{l}{glmdr} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{logistf/brglm2} & \multicolumn{1}{l}{linear} & \multicolumn{1}{l}{glmdr} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{logistf/brglm2} & \multicolumn{1}{l}{linear}  \\
+    & \multicolumn{1}{l}{glmdr\tnote{1}} & \multicolumn{1}{l}{bayesglm\tnote{2}} & \multicolumn{1}{l}{logistf\tnote{3} / brglm2\tnote{4}} & \multicolumn{1}{l}{linear\tnote{5}} & \multicolumn{1}{l}{glmdr} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{logistf / brglm2} & \multicolumn{1}{l}{linear}  \\
     & \multicolumn{4}{c}{in-sample accuracy} &\multicolumn{4}{c}{average length of confidence intervals}\\ 
     \hline
-    Complete Separation & 100 \% & 100 \% & 100 \% & 100 \% & 0.55 & 0.83 & 0.84 & 0.45 \\
-    Quasi Separation & 90 \% & 90 \% & 90 \% & 90 \% & 0.42 & 0.84 & 0.84 & 0.55 \\
-    Quadratic & 100 \% & 100 \% & 100 \% & 90 \% & 0.20 & 0.82 & 0.81 & 0.43 \\
-    Endometrial & 88.61 \% & 88.61 \% & 88.61 \% & 86.08 \% & 0.74 & 0.84 & 0.84 & 0.30 \\
-    Maize & 87.14 \% & 87.07 \% & 87.01 \% & 86.81 \% & 0.82 & 0.84 & 0.84 & 0.10                          
+    Complete Separation & 100 \% & 100 \% & 100 \% & 100 \% & 0.55 & 0.83 & 0.84 & 0.83 \\
+    Quasi Separation & 90 \% & 90 \% & 90 \% & 90 \% & 0.42 & 0.84 & 0.84 & 0.84 \\
+    Quadratic & 100 \% & 100 \% & 100 \% & 90 \% & 0.20 & 0.82 & 0.81 & 0.86 \\
+    Endometrial & 88.61 \% & 88.61 \% & 88.61 \% & 86.08 \% & 0.74 & 0.84 & 0.84 & 0.86 \\
+    Maize & 87.14 \% & 87.07 \% & 87.01 \% & 86.81 \% & 0.82 & 0.84 & 0.84 & 0.84                      
     \end{tabular}
+    \begin{tablenotes}
+    \item[1]{Our model, Generalized Linear Model Done Right from $\texttt{glmdr}$ package \sqcitep{Eck2021}.}
+    \item[2]{Generalized Linear Model with Student-t prior distribution from $\texttt{arm}$ package \sqcitep{Gelman2008}.}
+    \item[3]{Logistic model with Firth's modified score function from $\texttt{logistf}$ package \sqcitep{Heinze2002}.} 
+    \item[4]{Bias Reduction in Generalized Linear Models from $\texttt{brglm2}$ package \sqcitep{Kosmidis2009}.}
+    \item[5]{Multiple Linear Model using ordinary least squares.}
+    \end{tablenotes}
+    \end{threeparttable}
     }
 \end{table}
 
-
 \subsection{Prediction}
 
-We use the leave-one-out cross validation (LOOV) for prediction. This setting is the most suitable as we want to predict the kernel color of new maize given our data. In Table \ref{Tab:prediction}, we can see all models show similar performance. 
+We use the leave-one-out cross validation (LOOCV) for prediction. This setting is the most suitable as we want to predict the kernel color of new maize given our data. In Table \ref{Tab:prediction}, we can see all models show similar performance. 
 
 \begin{table}[!ht]
 \caption{Prediction results for all examples.}\label{Tab:prediction}
-\centering
-    \begin{tabular}{lcccccccc}
-    & \multicolumn{1}{l}{glmdr} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{logistf/brglm2} & \multicolumn{1}{l}{linear}  \\
-    & \multicolumn{4}{c}{out-of-sample accuracy} \\ 
-    \hline
-    Complete Separation & 87.5 \% & 100 \% & 100 \% & 100 \%\\
-    Quasi Separation & 80 \% & 80 \% & 80 \% & 80 \%\\
-    Quadratic & 93.33 \% & 93.33 \% & 93.33 \% & 86.67 \%\\
-    Endometrial & 87.34 \% & 86.08 \% & 86.08 \% & 81.01 \% \\
-    Maize & 85.13 \% & 86.23 \% & 86.03 \% & 86.29 \%                    
-    \end{tabular}
+    \centering
+    \begin{threeparttable}
+        \begin{tabular}{lcccccccc}
+        & \multicolumn{1}{l}{glmdr\tnote{1}} & \multicolumn{1}{l}{bayesglm\tnote{2}} & \multicolumn{1}{l}{logistf\tnote{3} / brglm2\tnote{4}} & \multicolumn{1}{l}{linear\tnote{5}}  \\
+        & \multicolumn{4}{c}{out-of-sample accuracy} \\ 
+        \hline
+        Complete Separation & 87.5 \% & 100 \% & 100 \% & 100 \%\\
+        Quasi Separation & 80 \% & 80 \% & 80 \% & 80 \%\\
+        Quadratic & 93.33 \% & 93.33 \% & 93.33 \% & 86.67 \%\\
+        Endometrial & 87.34 \% & 86.08 \% & 86.08 \% & 81.01 \% \\
+        Maize & 85.46 \% & 86.23 \% & 86.03 \% & 86.29 \%                    
+        \end{tabular}
+\end{threeparttable}
 \end{table}
+
+\footnotetext[1]{Our model, Generalized Linear Model Done Right from $\texttt{glmdr}$ package \sqcitep{Eck2021}.}
+\footnotetext[2]{Generalized Linear Model with Student-t prior distribution from $\texttt{arm}$ package \sqcitep{Gelman2008}.}
+\footnotetext[3]{Logistic model with Firth's modified score function from $\texttt{logistf}$ package \sqcitep{Heinze2002}.} 
+\footnotetext[4]{Bias Reduction in Generalized Linear Models from $\texttt{brglm2}$ package \sqcitep{Kosmidis2009}.}
+\footnotetext[5]{Multiple Linear Model using ordinary least squares.}
 
 \section{Discussion}
 
-In the classification problem, the logistic model is one of the most common statistical model we can attempt. Although linear model is attractive option to use because of its easiness and handiness, the binary response variable makes the linear model violate some of Gauss-Markov assumptions as well as normality assumption. Therefore, even though results from Section 3.2 and 3.3 display that the performance of linear model is comparable to the logistic models, we can not fully utilize asymptotic properties of linear model and make a proper inference such as significance tests for coefficients.
+In the classification problem, the logistic model is one of the most common statistical model we can attempt. Although linear model is attractive option to use because of its easiness and handiness, the binary response variable makes the linear model violate necessary assumptions such as homoscedasticity and linearity (i.e. Gauss-Markov assumptions) as well as normality assumption. Therefore, even though results from Section 3.2 and 3.3 display that the performance of linear model is comparable to the logistic models, we can not fully utilize asymptotic properties of linear model and make a proper inference such as significance tests for coefficients.
 
 On the other hands, we can see all logistic models in Section 3.2 and 3.3 perform similarly despite of different approaches and techniques. The main difference between $\texttt{glmdr}$ and other methods is that $\texttt{glmdr}$ is only model that solves the separation problem within the maximum likelihood estimation framework under the subset of the original model, called limiting conditional model (LCM). It estimates the probability of success by finding the MLE in the Barndorff-Nielsen completion [\citeyear{barndorff-nielsen_1978}] based on approximate null eigenvectors of the Fisher information matrix. Hence, the way $\texttt{glmdr}$ handles the separation problem is the true remedy to the traditional $\texttt{glm}$'s issue causing from a separation problem. Meanwhile, all other methods solve the separation problem by switching the problem settings. For example, $\texttt{bayesglm}$ uses a Bayesian approach which scales the data first and then placing Cauchy distribution as a prior distribution on the coefficients and $\texttt{logistf}$ (similar to $\texttt{brglm2}$) modifies the score function to produce finite coefficients. As a result, it is hard to see their outputs as a solution for separation problem of $\texttt{glm}$.
 
@@ -219,7 +234,7 @@ In conclusion, when separation issue present in the logistic model, one can cons
 
 
 
-\bibliographystyle{plainnat}
+\bibliographystyle{abbrvnat}
 \bibliography{Reference}
 
 
