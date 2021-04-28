@@ -830,7 +830,7 @@ total_mat_linear_test <- matrix(NA,nrow=n_sample,ncol=8)
 
 numCores <- detectCores()
 registerDoParallel(numCores)
-y_idx <- which(names(glmdr_mod$om$data) == paste(formula(glmdr_mod$om))[2])
+y_idx <- which(names(glmdr_mod$om$model) == paste(formula(glmdr_mod$om))[2])
 #glmdr
 ret <- foreach(i=1:n_sample) %dopar% {
   training <- dat[-i,]
@@ -839,10 +839,10 @@ ret <- foreach(i=1:n_sample) %dopar% {
   glmdr_mod <- glmdr(Kernel.color~.,data=training, family="binomial")
   ret2 <- predict(glmdr_mod,newdata = testing_X, alpha=0.05,crit="AICc",interval = "wilson")
   total_mat_glmdr_test[i,1] <- i
-  total_mat_glmdr_test[i,4] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 1) #true positive
-  total_mat_glmdr_test[i,5] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) == testing_Y & testing_Y == 0) #true negative
-  total_mat_glmdr_test[i,6] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 0) #false positive
-  total_mat_glmdr_test[i,7] <- sum(ifelse(rowMeans(ret2)>=0.5,1,0) != testing_Y & testing_Y == 1) #false negative
+  total_mat_glmdr_test[i,4] <- sum(ifelse(rowMeans(ret2)>0.5,1,0) == testing_Y & testing_Y == 1) #true positive
+  total_mat_glmdr_test[i,5] <- sum(ifelse(rowMeans(ret2)>0.5,1,0) == testing_Y & testing_Y == 0) #true negative
+  total_mat_glmdr_test[i,6] <- sum(ifelse(rowMeans(ret2)>0.5,1,0) != testing_Y & testing_Y == 0) #false positive
+  total_mat_glmdr_test[i,7] <- sum(ifelse(rowMeans(ret2)>0.5,1,0) != testing_Y & testing_Y == 1) #false negative
   total_mat_glmdr_test[i,8] <- sum(total_mat_glmdr_test[i,4:7])
   total_mat_glmdr_test[i,]
 }
@@ -860,14 +860,15 @@ ret <- foreach(i=1:n_sample) %dopar% {
   bayesglm_mod <- bayesglm(Kernel.color~.,data=training, family="binomial")
   ret2 <- predict(bayesglm_mod, newdata= testing_X, type="response")
   total_mat_bayes_test[i,1] <- i
-  total_mat_bayes_test[i,4] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
-  total_mat_bayes_test[i,5] <- sum((ifelse(ret2>=0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
-  total_mat_bayes_test[i,6] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
-  total_mat_bayes_test[i,7] <- sum((ifelse(ret2>=0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative    
+  total_mat_bayes_test[i,4] <- sum((ifelse(ret2>0.5,1,0) == testing_Y) & (testing_Y == 1)) #true positive
+  total_mat_bayes_test[i,5] <- sum((ifelse(ret2>0.5,1,0) == testing_Y) & (testing_Y == 0)) #true negative
+  total_mat_bayes_test[i,6] <- sum((ifelse(ret2>0.5,1,0) != testing_Y) & (testing_Y == 0)) #false positive
+  total_mat_bayes_test[i,7] <- sum((ifelse(ret2>0.5,1,0) != testing_Y) & (testing_Y == 1)) #false negative    
   total_mat_bayes_test[i,8] <- sum(total_mat_bayes_test[i,4:7])
   total_mat_bayes_test[i,]
 }
 total_mat_bayes_test <- do.call(rbind,ret)
+sum(colSums(total_mat_bayes_test[,4:7])[1:2]) / sum(colSums(total_mat_bayes_test[,4:7])) # bayesglm
 ```
 
 ```{r, eval=FALSE}

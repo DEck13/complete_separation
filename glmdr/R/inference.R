@@ -68,7 +68,7 @@ b_hin_cond_chker <- function(xi, alpha, nulls){
 #' data(sports)
 #' out <- glmdr(cbind(wins, losses) ~ 0 + ., family = "binomial", data = sports)
 #' inference(out)
-inference <- function(object, alpha = 0.05, eps=1e-10, prediction=FALSE){
+inference <- function(object, alpha = 0.05, eps=1e-50, prediction=FALSE){
   linearity = object$linearity
   if(all(linearity == TRUE)){
     stop("MLE is not at infinity, use glm functionality for inferences.")
