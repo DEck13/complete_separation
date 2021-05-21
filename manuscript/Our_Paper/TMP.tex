@@ -1,0 +1,464 @@
+\documentclass[11pt]{extarticle}
+
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib}
+\usepackage{import}
+\usepackage{comment}
+\usepackage{mathtools}
+\usepackage{dirtytalk}
+\usepackage{xcolor}
+ \usepackage{multirow}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+
+\newtheorem{thm}{Theorem}
+\newcommand{\Gamlim}{$\Gamma_{\text{lim} \text{ }}$}
+\newenvironment{commentline}[1]{
+\noindent{\color{red} \rule{\linewidth}{0.5mm}}
+\textbf{Comment}: #1
+
+\noindent{\color{red} \rule{\linewidth}{0.5mm}}
+}
+
+\title{\textbf{Likelihood inference and prediction in exponential families when the maximum likelihood estimate does not exist}}
+\author{Suyoung Park \text{ }and Daniel Eck\\
+\emph{University of Illinois at Urbana-Champaign}}
+\date{Month 2020}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+    Space for the Abstract.    
+\end{abstract}
+\smallskip
+\noindent \textbf{Key Words:} list of keywords
+
+\begin{comment}
+\section{Introduction}
+
+\noindent The maximum likelihood estimate (MLE) does not always exist in the regular full discrete exponential family. Although generalized linear models such as logistic or Poisson are broadly used for the binary classification or categorical analysis respectively, none of statistical software has provided the proper estimation when the MLE does not exist. Perniciously, they do not warn users about this problem resulting in uninformed users make unreasonable inference and prediction without being aware of the issue. For example, when we can perfectly predict the response variable with one or more predictors in the logistic regression, the model fails to be identifiable and at least one coefficient lies at infinity. This is a critical issue in the use of the logistic regression because any statistical inference based on this model is not accurate. More importantly, it leaves us only impractical solutions to avoid this issue. One of common solutions is to remove problematic predictor until the MLE exists. However, this often leads us to get rid of the highly correlated predictor with the response variable \citep{Zorn2005}. Alternatively, \cite{Heinze2002} used the Firth's penalized maximum likelihood estimation which was proposed to reduce the bias of maximum likelihood estimators to obtain the finite parameter estimates. \cite{Kosmidis2009} then generalize this method for the nonlinear exponential family. These bias reduction methods enable us to estimate our parameter coefficients even though the canonical statistics are on the boundary.
+
+\begin{commentline}
+{Right after ``... are on the boundary.", I plan to discuss the problem of the bias-reduction methods; (1) limitation to the application - small, non-sparse data (2) difficulty in the interpretation. (3) possibly worse performance in prediction For (1), based on my understanding, bias-reduction method (esp. when we use the Firth's penalized likelihood estimation) only works well in the small sample and non-sparse data. (e.g., ``... existing implementations of the Jeffreys prior distribution which can crash when applied to sparse data" \citep{Gelman2008}. Also, Gelman noted that ``We also tried ... the Jeffreys prior distributions of Firth (1993) and Kosimidis (2007). Unfortunately, we still \textbf{encountered problems in achieving convergence} ..."). I also experience convergence problem in brglm in our Maize data. The main question is I am not sure if this is due to Firth's penalized likelihood problem or \textbf{computational unstable} (both \cite{Gelman2008} and Kosimidis (in his website) imply the problem comes from implementation not their thoery or methods) or etc. Therefore, I am trying simulation methods to confirm this - different sample size + sparse data. Additionally, \cite{Kosmidis2009} stated that \textbf{``brglm performs substantially better than unadjusted maximum likelihood, especially when the sample size is not large.}" We may need to investigate this statement. For (2), Gelman pointed out ``... most notably a Jeffreys prior distribution [Firth (1993)], but these have not been set up for reliable computation and are not always clearly interpretable as prior information in a regression context." But I am not sure if I should connect this lack of interpreability in the Bayesian framework to interpreability in the mean-value parameter. For example, bias reduction methods optimize the coefficients in the modified score function, which is not clear to interpret because of log-odds ratio scale. For (3) \cite{Kosmidis2009} mentioned ``the reduction in bias may sometimes by accompanied by inflation of variance, possibly yielding an estimator whose mean squared error is worse than \textbf{that of the original one.}"}
+\end{commentline}
+\end{comment}
+
+\begin{comment}
+%% Problem of the bias-reduction methods %%
+However, it is not computationally stable, especially when our data is sparse. Furthermore, this method has the difficulty in the interpretation of the result in the regression context and yields the estimator whose mean squared error is worse than that of the original model. This method is only good for small sample sizes.
+\end{comment}
+
+
+In the different ways, researchers try various prior distributions to solve this problem in the Bayesian framework. For example, \citeauthor{Heinze2002}'s method can be seen as the application of the Jeffrey's invariant prior. \cite{Genkin2007} used the Laplace distribution. Dirichlet and Normal distributions were also suggested; see, for example, \cite{Goodman1970} \cite{Clogg1991} \cite{Congdon2001}. Among these prior distributions, Cauchy class of prior distribution has  received the popularity recently \citep{Gelman2008}. \cite{Gelman2008} suggested the Cauchy distribution with center 0 and scale 2.5 as the default choice, and this method shows more stable and faster performance in the computation than the bias reduction methods.
+
+\begin{commentline}
+{\cite{Gelman2008} argue that "Our approach is similar (to the bias-reduction methods) but is parameterized in terms of the coefficients and thus allows us to make use of prior knowledge on that scale. ... scale-free prior distributions such as Jeffreys’ do not include enough prior information." We can add this in the advantage of bayesglm. But, I ahve not fully understood its meaning yet.}
+\end{commentline}
+
+\noindent Meanwhile, the model from \citeauthor{Gelman2008}'s method is not the best model as it does not solve the problem within the original model. That is, its deviance is always higher than that of original model. Also, the parameterization in terms of the coefficients has a drawback in the inference as well as interpretation. For example, coefficients in the logistic regression are in the log-odds ratio scale which is harder to interpret than the mean-value parameter. Also, Wald-type hypothesis tests and confidence intervals are less preferable than the likelihood based tests and confidence intervals because asymptotic properties do not hold when the MLE does not exist.
+
+\begin{commentline}
+{In "Also, the parameterization in terms of the coefficients has a drawback in the inference as well as interpretation.", what I ultimately wanted to say was our method optimizes parameter in terms of mean-value but other methods optimize it in terms of coefficients (same for the bias reduction methods). And except the Heinze method, logistf, by default, brglm and bayesglm only provide the Wald-type inference.}
+\end{commentline}
+
+\cite{Geyer2009} noticed that the MLE can exist in the Barndorff-Nielsen completion of the exponential family even if the MLE does not exist in the conventional sense. He devised the new one-sided confidence interval for the mean-value parameter and estimated the MLE in the completion by solving the linear programming. This approach is the first method that allows us to provide the valid hypothesis tests and confidence intervals inside the original model. That is, this likelihood based inference gives more accurate inference in comparison to the Wald-type inference, and a produced model has the lowest deviance (i.e., same as the original model). Also, finding the solution in terms of the mean-value parameter has the advantage in the interpretability. However, this algorithm required to solve at most \textit{n} number of programs with \textit{p} variables and does not provide the methodology for the prediction on new data. Therefore, it may not be useful in practice.
+
+In this study, we present the computationally efficient methodology that is fast and scalable for estimating the MLE in the completion of the exponential family by approximating the null eigenvectors of the Fisher information matrix proposed by \cite{Eck2020}. Following \citeauthor{Eck2020}, we apply this approach to popular data, endometrial cancer study \citep{Heinze2002} and maize inbred data from National Plant Germplasm System in the USA \citep{Romay2013}, to compare the performance with popular methods based on the likelihood intervals for the mean-parameter along with the five-folds cross validation. Moreover, we propose the methodology for the prediction on new data that can be useful in many applications.
+
+\begin{commentline}
+{In this part, we may consider data for other model as well because Endometrial/Maize data only represent the logistic regression. Ideally, we can find the data that is widely studied in the literature for Poisson/Multinomial model.
+
+"Moreover, we propose the methodology for the prediction on new data that can be useful in many applications." can be written in clearer way (but not sure how? Also, I meant, for "the methodology for the prediction", union prediction interval we discussed). Also, we may need to add how we compare (or maybe not? anyway it will be covered in the part 3: Methodology part) --- For example, we used (1) the overall size of likelihood based interval for \textbf{inference part} and (2) prediction interval and Brier score (used by Gelman)/misclassification rate for \textbf{prediction part}. Then, we can discuss the brief summary of the result. For example, how our methods outperformed our competitors.}
+\end{commentline}
+
+\section{Motivating examples}
+\begin{table}[!ht]
+\caption{Results From Survey of Teenagers Regarding Their Health Concerns \newline \cite[Table 8-3]{Fienberg1980}.\label{tab:Teenagers}}
+\begin{tabular}{|l|cc|cc|}
+\hline
+\multirow{2}{*}{\begin{tabular}[c]{@{}l@{}}Health \\ Concerns\end{tabular}} & \multicolumn{2}{c|}{Male} & \multicolumn{2}{c|}{Female}\\
+& 12-15 & 16-17 & \multicolumn{1}{c}{12-15} & \multicolumn{1}{c|}{16-17} \\ \hline
+\begin{tabular}[c]{@{}l@{}}Sex,\\ Reproduction\end{tabular}  & 4 & 2 & 9 & 7 \\ 
+\begin{tabular}[c]{@{}l@{}}Menstrual \\ Problems\end{tabular}  & 0 & 0 & 4 & 8 \\  
+\begin{tabular}[c]{@{}l@{}}How Healthy \\ I Am\end{tabular} & 42 & 7 & 19 & 10 \\  
+Nothing & 57 & 20 & 71 & 31 \\ \hline
+\end{tabular}
+\end{table}
+\begin{commentline}
+{Overall, I want to develop our paper in terms of the Fisher information. For example, in the Poisson regression, if we have ``too few"" observations, MLE may not exist and its Fisher information matrix is small(est), meaning the amount of the information of an observable random variable X carries about the parameter $\theta$ is smaller in comparison to other columns of data. Likewise, in the logistic regression (univariate case), if we can partition all observations into two groups by response variable (i.e., either 1 or 0), then, in terms of contingency table, we can think 2 by $2^{P}$ table (y = 0 or 1 where P is the number of problematic predictors, and x= decision boundary), which we will observe the same thing in the previous example. For multivariate case, it will be the same. Eventually, I want to connect this to our method that approximating null space of Fisher information, variance-covariance matrix of the canonical statistics.}
+\end{commentline}
+\subsection{A log-linear model example}
+\noindent Structural zeros (also called incomplete tables) are not uncommon to observe in the high-dimensional contingency table. \citet[Chapter 8.3]{Fienberg1980}, for instance, discussed a famous example of structural zeros, originally collected by Brunswick [1971]. As shown on Table \ref{tab:Teenagers}, it contains sex (male, female), age (12-15 group and 16-17 group), and 4 groups of health concerns. Notice that there are two zero cells in menstrual problems for the male group as man does not experience menstruation. If we fit the log-linear model with up to three-way interactions, any coefficients including menstrual problems terms cannot be estimated using the maximum likelihood estimation because the Fisher information is zero.
+
+
+\begin{commentline}
+{As our methods can apply for not only logistic regression but also whole discrete exponential family, I intentionally started with the well-known data in the Poisson regression. Also, I found many researchers develop their methods to solve structural zeros issue which I realized that it was essentially equivalent to our problem. But we may not want to focus on the Poisson/Multinomial case as we concentrate on the maize data. Technical report is ready in /manuscript/Supplmentary/Code/2.Motivation.Rmd.
+
+"... because the Fisher information is zero." To my understanding, in this example, we do not have a data in Menstrual Problems for male and it means there is information from observed $X$ for our parameter to estimate, thus MLE does not exist. I want to double-check if my understanding here is correct.
+}
+\end{commentline}
+
+\subsection{A logistic regression example}
+
+Another example is the genomic selection in the maize inbred data \citep{Romay2013}. 
+\begin{commentline}
+{In here, I want to add the context;
+(1) description of the dataset
+(2) the research question (i.e. importance of kernel color and why classifying kernel color is important in the genomic selection).
+we may need a help from Prof. Lipka to write this part.
+}
+\end{commentline}
+
+This data does not show any separation issues in univariate case. That is, any combination of the kernel color and predictors can be fitted using the logistic model. However, when we include \textit{p} predictors, we face the separation issue. Specifically, there are 74 distinct breeds whose their kernel color is either white or yellow. 
+
+%% LEFT OVER %%
+
+\section{Preliminaries}
+
+
+%%%%%%%%%%%%%
+\begin{comment}
+Fisher Information
+
+Check for near-singularity of the Fisher information matrix, which indicates either nonexistence of the MLE or near collinearity of predictors, and this check has revealed a number of instances where nonexistence of the MLE arose in actual applications.
+
+Complete separation
+The MLE distribution says we can never observe data other than what we did observe; other data values occur with probability zero.
+
+Penalized likelihood for sparse contingency tables with an
+application to full-length cDNA libraries
+\end{comment}
+%%%%%%%%%%
+
+\subsection{Exponential Family}
+% Define exponential family in terms of Log Likelihood
+Let X be a random variable or vector with sample space $\mathcal{X} \subset \mathbb{R}^p$ and $\theta$ be a vector parameter with space $\Theta$. An exponential family of probability distributions is a parametric statistical model whose log likelihood  has the following general form:
+\begin{equation}\label{exp_ll}
+    l(\theta)=\langle T(x),\theta\rangle-c(\theta)
+\end{equation}
+where $T(x)$ is a vector of sufficient statistics and $c(\theta)$ is the cumulant generating function of the family and $\theta$ is called canonical or natural parameter.
+
+% Fullness and Regularity
+An exponential family is said to be $\textit{full}$ if its canonical parameter space is in the effective domain:
+
+\begin{equation}\label{effective_domain}
+\Theta = \{\theta : c(\theta) <+\infty \}.
+\end{equation}
+A full exponential family is said to be $\textit{regular}$ if its canonical parameter space is a non-empty open set.
+
+% Identifiability
+Let $\theta$ and $\psi$ be two different canonical parameters in the space $\Theta$. A exponential family of probability distributions is $\textit{identifiable}$ if $\theta$ and $\psi$ correspond to a different distribution.
+
+In this paper, we mainly focus on a regular full discrete exponential family such as binomial (logistic), Poisson, multinomial distribution and so on.
+
+\subsection{Mean-Value Parameter}
+
+In the most literature and statistical software, canonical statistic has been exclusively analyzed in the exponential family.
+Mean-value parameter 
+Mean value parameterization has advantages; especially interpretability. we use canonical statistics because they have meaning in the substantive context. The parameter corresponding to each canonical statistic is just its expected value over the population of canonicals. For many parameters, this population-average interpretation has great intuitive appeal. The mean value parameter space is finite and convex, and the points in the space have an interpretable scale.
+
+For the regular full exponential family, the mean-value parameter vector, $\mu$ is defined as:
+\begin{equation}\label{Mean_Val_Para}
+    \mu = E_{\theta}(T(x)) = \nabla c(\theta).
+\end{equation}
+
+The notion of canonical affine submodels of exponentia lfamilies was only propsed recently (Geyer, 2007).
+
+If the model is identifiable, the change-of-parameter from canonical to mean-value parameter is invertible for a regular exponential family. 
+In the exponential family, canonical parameters do not represent the probabilities and expectations. In this case, they are not meaningful; we need them because PMF and canononical affine submodels are specified in terms of them. 
+
+We want our interpretations to be in terms of mean-value parameters, since those are the ones directly related to probabilities and expectations.
+Mean-value parameters do not change so long as the submodel is the same.
+
+$\hat{\mu} = y$ means the MLE ofr the mean-vlaue parameter is the observed value of the canonical statistc vector $y$. Observed equals expected.
+
+In terms of interpreting MLE, the mena-value parameters are meaningful and the canonical parameters meaningless.
+
+\subsection{Limiting Conditional Model}
+For a full exponential family having canonical statistic $Y$, canonical parameter $\theta \in \Theta$, and $H = \{y: y^T v = C\}$ for some constant $C$, and $\text{pr}(Y \in H) > 0$ for some distribution in the family,
+\begin{equation}\label{LCM_limit}
+    \lim_{s\to\infty} f_{\theta+sv}(x) = \begin{dcases}
+    0 & \langle Y, (\theta - \psi)\rangle < C \\
+    f_{\theta}(x \text{ } | \text{ } Y \in H) & \langle Y, (\theta - \psi)\rangle = C \\
+    +\infty & \langle Y, (\theta - \psi)\rangle > C
+    \end{dcases}
+\end{equation}
+
+Notice that the family 
+\begin{equation}\label{LCM_family}
+    \{ f_{\theta}(\cdot \text{ } | \text{ } Y \in H) : \theta \in \Theta \}
+\end{equation}
+is also an exponential family with the same canonical statistic and parameter with the original family \eqref{exp_density}. We now will call this family the limiting conditional model (LCM). The canonical parameter space of the family is at least
+\begin{equation}\label{LCM_space}
+    \Theta + \Gamma_{\text{lim}} = \{ \theta + \gamma: \theta \in \Theta \text{ and } \gamma \in \Gamma_{\text{lim}}\},
+\end{equation}
+where $\Theta$ is the canonical parameter space of the original family and $\Gamma_{\text{lim}}$ is the constancy space of the family \eqref{LCM_family}.
+%% Ques: definition of limiting conditional model and its space
+
+The log likelihood for family \eqref{LCM_family} is
+$$ l_{\text{LCM}}(\theta) = l(\theta) - \log(\text{pr}_{\theta}(Y \in H))= \langle Y, \theta\rangle - c(\theta) - \log(\text{pr}_{\theta}(Y \in H)).$$
+Suppose the MLE exists for the LCM. Then, we call this as a MLE in Barndorff-Nielsen completion of the original family if 1) it maximizes the likelihood in the union of the LCM and the original family, 2) it maximizes the likelihood in the family that that is the set of all limits of sequences of distributions in the original family.
+%% Ques: How to insert Theorem 5.
+\subsection{Null Space of the Fisher Information}
+
+The null space of the Fisher information matrix (also, the variance-covariance matrix of the canonical statistic or null eigenvector of the Fisher information matrix) is crucial for the statistical inference in our method because we approximate the null space of the Fisher information matrix for an exponential family to find the MLE in the Barndorff-Nielsen completion. Since it is the support of the canonical statistic under the MLE distribution in the completion, it must contain the mean value vector of the canonical statistic. Thus, we can see \Gamlim in \eqref{LCM_space} is the null space of the Fisher information matrix. In our method, we can estimate the null space of the Fisher information matrix from its eigenvalues and eigenvectors using inexact computer arithmetic. 
+%% Ques: need to add some description on how to calculate possibly?
+%% Ques: relationship between affine hull and null space of the Fisher infromation matrix
+%% Ques: what do eigenvalues and vectors tell us?
+\begin{comment}
+===Ingridient has not been used===
+
+Conventionally, we find the MLE by iteratively going uphill until likelihood function becomes flat.
+
+null space of the Fisher information matrix (FIM) = null eigenvector of the FIM = affine hull
+= variance covariance matrix of the canonical statistic. 
+
+We will get nearly the correct affine hull if we can guess the correct null space of the Fisher information matrix from its eigenvalues and eigenvectors computed using inexxact computer arithmetic.
+
+We add theory describing approximate calculation of the MLE in the completion by maximizing the likelihood, showing that such estimates are close to the exact MLE in many respects including moments of all orders, and this allows new methods of calculation based on the null space of the Fisher information matrix. 
+
+- constancy space of the LCM is the \Gamlim
+\end{comment}
+
+
+\subsection{Logistic Regression}
+
+
+The logistic regression is the special case of the generalized linear model which the conditional distribution $y\text{ }|\text{ }x$ is a Bernoulli distribution (i.e., $y \in \{0,1\}$). By convention, we encode 1 as a ``success" and 0 as a ``failure." We model the conditional probability of observing one (success) given $x$:
+
+$$\text{Pr}(Y_i = 1 | X=x_i;\beta) = p_i = \frac{\exp{(x_i\beta)}}{1+\exp{(x_i\beta)}},$$
+where $\beta$ is unknown parameters.
+
+From the linear regression's point of view, this logistic regression is equivalent to:
+$$ g(p_i) = \ln(\frac{p_i}{1-p_i}) = x_i^T\beta$$
+where $g(x) = \ln(\frac{x}{1-x})$ is a logit link (log-odds ratio).
+Therefore, like an ordinary least squares (OLS), we can estimate $\beta$ using the score function and make a statistical inference using diagonal elements of the inverse of the Fisher information, which represent the estimated variance of parameters.
+
+Specifically, given log-likelihood function of the logistic regression model,
+$$\ln L(\beta|Y) = \sum_{i=1}^{n} y_i\log{(p_i)} + (1-y_i)\log{(1-p_i)},$$
+the score function is:
+\begin{equation}\label{logit_Score}
+\frac{\partial \ln{L(\beta|Y)}}{\partial \beta} = 
+\sum_{i=1}^{N} (y_i - \log{(p_i)}) X_i =
+\sum_{i=1}^{N} [y_i + \log{(1+\exp{(-x_i\beta)})}] = 0,
+\end{equation}
+and the variance-covariance matrix is the inverse of the Fisher information:
+\begin{equation}\label{logit_Fisher}
+\widehat{\textbf{Var}(\beta)} = [I(\beta)]^{-1} = \left[-E[\frac{\partial^2 \ln{L(\beta|Y)}}{\partial \beta_i \partial \beta_j}]\right]^{-1}.
+\end{equation}
+
+\subsection{Mean-value Parameters}
+Unlike the linear model, an interpretation on $\beta$ from the logistic model is difficult because our outcome variable is log-odds ratio rather than $y$ itself. For example, we can say that as one unit of explanatory variable increases the expected change in log odds ratio of conditional probability of success is $\beta$. However, it is not very intuitive and informative. 
+
+To overcome this, we can consider mean-value parameterization. By exponential family theory, the mean value parameters is the gradient of a cumulant generating function. Thus, the mean value parameters in the logistic regression model are:
+
+$$ \mu = \nabla c(x_i^T \beta) = \nabla \ln{(1+\exp{(x_i^T \beta))}} = \frac{\exp{(x_i^T \beta)}}{1+\exp(x_i^T \beta)}.$$
+
+Now, our parameter of interests is the expected conditional probability of success rather than the coefficients of the logistic regression model. Hence, by plugging in $\hat{\beta}$ we can estimate the success probability for given observation.
+
+\subsection{Calculating the MLE for discrete GLM}
+
+In a regular full discrete exponential family, the MLE falls into one of three cases; 1) a MLE exists in the original model, 2) a MLE in the Barndorff-Nielsen completion is completely degenerate, and 3) a MLE in the Barndorff-Nielsen completion is not completely degenerate. When the MLE exists in the conventional sense (the first case), we can simply use any statistical software to fit the model. In the latter two cases, we can use our method for statistical inference.
+
+\subsubsection{Completely Degenerate}
+
+Suppose $Y$ is concentrated to some hyperplane $H$, then there exists a non-zero vector $v$ in \eqref{non-identifiability} that $Y$ has no variability. In other words, the variance-covariance matrix for $Y$ is not full rank and the model is not identifiable. If $Y$ repeats to be concentrated to all possible hyperplanes that are nested within each other, the model is completely degenerated. The eigenvalues of the Fisher information then are all zeros and every parameter values $\theta \in \Theta$ corresponds to the same distribution. In this case, every vector of the canonical parameters is an MLE. It implies \Gamlim is the whole parameter space, $\Theta$ and $I$ is the whole index for the reponse vector in \eqref{CI_def}. 
+%% Is the variance-covariance matrix = fisher information matrix?
+%% (the saturated model MLE's mean value parameters agree with the observed data; they are on the boundary of the set of either zero or one)
+
+\subsubsection{Not Completely Degenerate}
+
+The MLE exists in the Barndorff-Nielsen completion is not completely degenerate, the limiting conditional model conditions on the non-problematic points (linearity = FALSE). 
+
+
+
+\subsection{One-Sided Confidence Interval}
+%% Add more description on context of one-sided interval
+Let $\theta = M \beta$ denote the saturated model canonical parameter (also called \say{linear predictor} in the GLM) where $\beta$ denotes the vector of submodel canonical parameters (often called \say{coefficients} in statistical software) and $M$ denotes a model matrix. Let $\hat{\beta}$ be a MLE in the LCM. Let $I$ denote the index set of the observed values in the response vector on which we condition the original model to get the LCM. Hence, $Y_I$ and $y_I$ denote a random vector of these observed values and its realizations, respectively. Then endpoints for a $100(1-\alpha)\%$ confidence interval for a scalar parameter $g(\beta)$ are
+\begin{equation}\label{CI_def}
+        \min_{\substack{\gamma \in \Gamma_{\text{lim}} \\ \text{pr}_{\hat{\beta}+\gamma}(Y_{I}=y_{I}) \geq \alpha}}{g(\hat{\beta}+\gamma)} \quad \text{and} \quad \max_{\substack{\gamma \in \Gamma_{\text{lim}} \\ \text{pr}_{\hat{\beta}+\gamma}(Y_{I}=y_{I}) \geq \alpha}}{g(\hat{\beta}+\gamma)}
+\end{equation}
+where $\Gamma_{\text{lim}}$ is the null space of the Fisher information matrix and $\alpha$ is the significance level. Since we always know if the observed values in the response vector is at the upper or lower of end of its rangem we only need to compute the other end of the confidence interval.
+
+We can see solving \eqref{CI_def} is the optimization problem. In our method, we used the sequential quadratic programming (SQP) method to solve the constrained nonlinear problem.
+
+%% We will be doing confidence intervals for mean value parameters for components of the response vector for which the MLE in the LCM is on the boundary, either zero or one. 
+
+%%Example for Logistic, Poisson
+
+\subsection{Next}
+Thus, the Fisher information may be seen as the curvature of the support curve (the graph of the log-likelihood). Near the maximum likelihood estimate, low Fisher information therefore indicates that the maximum appears "blunt", that is, the maximum is shallow and there are many nearby values with a similar log-likelihood. Conversely, high Fisher information indicates that the maximum is sharp.
+
+We can estimate the unknown parameter from \eqref{logit_Score} and we can made. the inference using the diagonal elements of the inverse of the fisher information from \eqref{logit_Fisher}.
+
+
+
+Let $p=\text{logit}^{-1}(\theta)$ denote the mean value parameter vector. Then the probabilities in \eqref{CI_def} are
+$$ \text{pr}_{\beta}(Y_{I} = y_{I}) = \prod_{i \in I}{p_{i}^{y_{i}} (1-p_{i})^{n_{i}-y_{i}}} $$
+where the $n_{i}$ are the binomial sample sizes. 
+
+We could take the confidence interval problem to be
+
+\begin{equation} \label{CI_logistic}
+\begin{split}
+    \text{maximize } & \quad p_{k} \\
+    \text{subject to } & \quad \prod_{i \in I}{p_{i}^{y_{i}} (1-p_{i})^{n_{i}-y_{i}}} \geq \alpha
+\end{split}
+\end{equation}
+where $p$ is taken to be the function of $\gamma$ described above. And this can be done for any $k \in I$.
+
+Notice that the mean value parameter contains exponential term in the numerator. Thus, when our canonical parameter is extremely large, we will lose precision. Thus, we transform our problems to make it computationally stable. Firstly, we convert maximize problem to minimize problem, optimize canonical parameter rather than mean value parameter and rewrite mean value parameter.
+
+Firstly, solving minimizing problem is much more preferable in the general sense because it is much easier to solve computationally. Secondly, canonical parameter, $\theta_{k} = \text{logit}(p_k)$ is a monotone transformation, so if we find the solution, it will be the solution for the other.
+To avoid a catastrophic cancellation, we carefully construct the mean value parameters:
+$$p_{i} = \frac{\exp(\theta_{i})}{1+\exp(\theta_{i})} = \frac{1}{1+\exp(-\theta_{i})}$$
+$$1-p_{i} = \frac{1}{1+\exp(-\theta_{i})} = \frac{\exp(-\theta_{i})}{1+\exp(-\theta_{i})}$$
+Thus, our problem \eqref{CI_logistic} is now
+
+\begin{equation} \label{CI_logistic2}
+\begin{split}
+    \text{minimize } & \quad -\theta_k \\
+    \text{subject to } & \sum_{i \in I}[y_{i} \log{(p_i)} + (n_i - y_i) \log{(1-p_{i}})] - \log{(\alpha)}.
+\end{split}
+\end{equation}
+
+\begin{comment}
+- We minimize canonical rather than mean value parameters to avoid extreme inexactness of computer arithmetic in calculating mean value parameters near zero and one.
+\end{comment}
+
+\subsection{Complete Separation}
+
+The null space of the fisher information \eqref{logit_Fisher} represents the variance-covariance matrix of canonical statistics for an exponential family. When one or more explanatory variable perfectly predict the outcome variable $Y$, the Fisher matrix becomes singular. As a result the maximum likelihood equation has no solution. There is no variance left to be explained in $Y$ by the model's other explanatory variable. So the corresponding parameter estimates for the remaining covariates will be zero.
+
+If the likelihood is flat, the diagnoal elements of variance-covariance matrix will be infinite in size. It yields infinite standard error estimates.
+
+\section{Solution}
+\subsection{Methodology}
+
+
+\subsubsection{Computational Cost}
+
+\section{Results}
+
+\subsection{Examples}
+
+\subsubsection{Endometrial Cancer Study}
+\cite{Heinze2002} firstly investigated the endometrial data set (n = 79), which was originally provided by Dr E. Asseryanis from the Vienna University Medical School. The main purpose of this study was to describe histology of cases (HG) in terms of three risk factors: neovasculation (NV), endometrium height (EH) and pulsatility index of arteria uterina (PI). 30 patients was classified grading 0-II for histology (HG = 0) and 49 patients for grading III-IV (HG = 1). There are 13 patients who has neovasculization (NV = 1) and absent for 66 patients (NV = 0). Pulsatility index (PI) ranges from 0 to 49 with mean of 17.38 and median of 16.00, and endometirum height (EH) ranges from 0.27 to 3.61 with mean of 1.662 and median of 1.640.
+
+\subsubsection{Maize data}
+
+
+
+\subsubsection{Comparison with other methods}
+
+When comparing the computational cost, check two cases when n increases and p increases and both.
+
+
+\section{Conclusion}
+
+Covering the drawback in the computational cost as n increases, we is more likely to have non-problematic points and need to iterate more. 
+
+-  (completely degenerate case) Hence, our method is not practically useful because the computational cost is proportional to the number of the sample.
+
+
+\bibliographystyle{plainnat}
+\bibliography{Reference}
+
+\section{Appendix}
+Will be correctly labeled later...
+
+\begin{comment}
+\section{Idea Note}
+This section is for the items will (or will not) be added later but I wrote the first.
+-  The $T(x)$ is called a canonical or natural statistics, and $\theta$ is called canonical or natural parameter.
+- The canonical statistics, parameter, and cumulant function of an exponential family are not unique.
+- Direction of constancy + constancy space?
+-  (regularity in exp fam) if \ref{effective_domain} is an open subset of the Euclidean space where $\theta$ takes values.
+- Possibly test the computational cost of bayesglm as p increase and n increases.
+- model matrix cannot be ill conditioned.
+
+- When there exists a hyperplane $H$ such that $Y$ is concentrated to $H$, then there exists a non-zero direction such that $Y$ exhibits no variability. Therefore, the variance matrix for $Y$ is not full rank and the model is not identifiable. This idea can repeat itself. There can be several hyperplanes, nested within each other, such that the $Y$ is concentrated on each of these hyperplanes. This can continue until we have exhausted the number of dimensions in $Y$. When this occurs, the model is completely generate. The variance matrix is 0 and every parameter value $\theta \in \Theta$ corresponds to the model that generates the observed data with probability one. In other words, all $\theta \in \Theta$ correspond to the same distribution.
+
+- We will not be able to do this when the statistical model has an ill-condiioned model matrix. Ill-conditioning will add spurious nearly zero eigenvalues that arise from the ill-conditioning rather than the concentration of the MLE distribution on the correct affine hull.
+
+- In the example 7.2, 7.3, the MLE distribution is only partially but not completely degenerate. This foloows from the estimated Fisher information matrix being signular (to within the accuracy of computer arithmetic) but not the zero matrix. Some of its eigenvalues are zero, butt not all of them. The MLE of some of the saturated model mean value parameters agree with the observed data, but not all. 
+
+- the limiting distribution evalulated along the iterates of a likelihood maximizing sequence has log density that is a generalized affine function with structure given by Theorem 5. Cumulant generating functions coverge alogn this sequence of iterate (Theorems 6 and 7), do estimates of moments of all order (Theorem 10) for distributions takign estimated parameter valuyes alogn this sequence of iterates.
+
+- (mean-value parameter)
+
+For a regular full exponential family,
+use (here formula 5) to define:
+
+$$\mu = E_{\theta}(y) = \Delta c(\theta).$$
+
+* i.e Gradient (or Jacobian) of cumulant generating function
+The vector $\mu$ is called the mean-value parameter vector.
+
+relevant theorem:
+The mean value parameterization of a regular full exponential family is always identifiable: every distribution in the family has a mean vector, and differnt distributions have different mean vectors.
+
+(Review, Barndorff-Nielsen 1978, p121).
+
+Remark: 
+
+$$\mu_1 = \Delta c(\theta_{1})$$
+$$\mu_2 = \Delta c(\theta_{2})$$
+and $\mu_1 = \mu_2$, then $\theta_{1}-\theta_{2}$ is a direction of constancy.
+
+Canonical statistic of the submodel is $M^T y$, so its mean has to be $M^T \mu$ by linearity of expectation.
+
+$$\theta = \alpha + M \beta$$
+$$ \tau = M^T \mu$$ 
+* $\tau$ is submodel mean-value parameter.
+
+- For a full exponnetial family with convex support $C$ and observed value of the canonical statistic $y$ such that $y \in C$, 
+The MLE exists = Every direction of recession is a direction of constancy.
+
+* Every direction of constancy is a direction of recession but convserse is not true.
+
+- By Geyer pg 12 corollary 2, all maximum likelihood estimates correspond to the same distribution. Thus we have uniquenss.
+
+- every vector is an MLE. We take the zero vector to be $\hat{\beta}.$ LEt $I$ denote the index set of the components of the response vector on which we condition the original model (OM) to get the limiting conditional model (LCM). So, $I$ is the whole index vector for the model. Let $Y_{I}$ and $y_{I}$ denote the the corresponding components of the response vector considered as a random vector and as an observed value, respectively. Then, we can calculate the confidence interval using \eqref{CI_def} where $\Gamma_{\text{lim}}$ is the constancy space of the LCM. In this example, 
+\Gamlim is the whole parameter space. In these expressions $\text{pr}$ denotes probability with respect to the OM not the LCM. 
+
+
+\end{comment}
+
+%Introduction residuals
+\begin{comment}
+In 2018, \citeauthor{Eck2020} proposed a computationally efficient algorithm
+In this study, we proposed new fast and novel method of statistical inference on the discrete exponential family by approximating the null eigenvectors of the Fisher information matrix. Theories and properties we use in this paper can be found in our different paper \cite{Eck2020}. In this study, we primarily discuss the complete separation case. Our method outperformed any methods in accuracy and performance. We used the Maize data for the demonstration.
+(In terms of the Bayesian interpretation of this correction, it ais seen as the application of Jeffreys' invariant prior (1946)). 
+and \cite{Kosmidis2009} 
+However, the penalize-likelihood based methods are not computationally stable, especially when the data is sparse, it fails to compute the parameter coefficients. Also, it is not always clearly interepretable in the usual inrferencs based on Wald-type statistics (Heize and Schemper recommen use of pennalized-likelihood-ratio tests instead of stadnard Wald tests with profile likelihood beacuse profile likelihood-based confidence intervals tend to provide more accurate coverage than their asymptotic analog in small samples and/or when parameters are influenced by boundary conditions.).
+Heinze (2002) uses the Firth's modification of the score function to solve this problem. Since Firth's method can reduce the bias of maximum likelihood estimators which produces the finite parameter estimates using penalized maximum likelihood estimation. It enables use to perform statistical inference based on the profile penalized likelihood is preferable to Wald-type tests and confidence intervals. However, it has not been set up for reliable computation. For example it creashes when applied to sparse data and are not always clearly interpretable as prior information in a regression context.
+The most popular approach to this problem is to calculate the coefficients using the Jeffreys prior distribution with Firth's penalized likelihood method (1993, Heinze). However, it has not been set up for reliable computation (it crash when applied to sparse data) and are not always clearly interpretable as prior information in a regression context.
+[Explain other methods]
+[kosmidis]
+scale-free prior distributions such as Jeffreys' do not include enough prior information.
+[Bayesglm]
+Bayesglm is simlar but is parameterized i nterms of the coefficients and thus allows us to make sue of prior knolwedge oion that scale.
+Gelman et al propsed the Cauchy distribution for prior distribution.
+(Penalized likelihood ratio tests and profile penalized likelihood confidence intervals)
+[Point out the problem such as worse inference]
+[Interpretation]
+[Introduce Geyer's method]
+[Point out it took too much time even for small dataset]
+[Furthermore, it does not provide ]
+[Explain our methods and contribution and how it is different from Geyer's method]
+[Maize data]
+We deomonstrate the effectiveness of our method in the Maize data and compare the performance with competitors. We used brglm2 and bayesglm for comparison. 
+Papers we are going to discuss:
+1. \textit{Heinze, 2002, logistf} 
+. \textit{Kosmidis, 2007, brglm2} 
+3. \textit{Gelman, 2008, arm (bayesglm)} 
+4. \textit{Geyer, 2009, gdor} 
+(Possibly we can talk about separation very briefly - Albert A, Anderson JA. On the existence of maximum likelihood estimates in logistic regression models. Biometrika 1984; 71:1–10, very first paper talking about the terms, "separation.") (Also Heinze is a good example)
+Briefly mention the history of effort to solve the separation problem (when canonical statistic lies on the boundary of its convex support). Explain how each method works.
+\end{comment}
+
+\end{document}

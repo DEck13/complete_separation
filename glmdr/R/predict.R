@@ -38,7 +38,7 @@ my_finder <- function(flag,cur_mod,criteria,alpha){
 #'mod <- glmdr(y~x, family="binomial")
 #'predict(mod, newdata = new_df, cirt="AICc")
 #'}
-predict.glmdr <- function(object, newdata = NULL, crit="BIC",alpha=0.05, interval="wilson"){
+predict.glmdr <- function(object, newdata = NULL, crit="AICc",alpha=0.05){
   
   if(is.null(newdata)){
       return(ifelse(predict(object$om,type="response")>=0.5,1,0))
@@ -51,7 +51,7 @@ predict.glmdr <- function(object, newdata = NULL, crit="BIC",alpha=0.05, interva
   if(crit=="AICc"){
     criteria <- my_AICc
   }
-  ret_mat <- matrix(NA,ncol=2,nrow=nrow(newdata))
+  ret_vec <- rep(NA,nrow(newdata))
   stopifnot((ncol(newdata)+1)==ncol(object$om$model))
 
   for(i in 1:nrow(newdata)){
@@ -95,20 +95,18 @@ predict.glmdr <- function(object, newdata = NULL, crit="BIC",alpha=0.05, interva
       w0 <- w1 <- 0.5
     }
     phat_star <- w0 * phat_y0 + w1 * phat_y1
+    ret_vec[i] <- phat_star
     #5. construct CIs with respect to phat*
-    q <- 1-phat_star 
-    n_sample <- 1
-    z_val <- qnorm(p = alpha / 2, lower.tail = FALSE)
-    part1 <- 1/(1+(z_val^2/n_sample))
-    part2 <- phat_star+(z_val^2/(2*n_sample))
-    part3 <- z_val/(1+(z_val^2/n_sample))
-    part4 <- sqrt(((phat_star*q)/n_sample)+z_val^2/(4*n_sample^2))
-    lower <- part1*part2 - part3*part4
-    upper <- part1*part2 + part3*part4
-    ret_mat[i,] <- cbind(lower,upper)
+    # q <- 1-phat_star 
+    # n_sample <- 1
+    # z_val <- qnorm(p = alpha / 2, lower.tail = FALSE)
+    # part1 <- 1/(1+(z_val^2/n_sample))
+    # part2 <- phat_star+(z_val^2/(2*n_sample))
+    # part3 <- z_val/(1+(z_val^2/n_sample))
+    # part4 <- sqrt(((phat_star*q)/n_sample)+z_val^2/(4*n_sample^2))
+    # lower <- part1*part2 - part3*part4
+    # upper <- part1*part2 + part3*part4
+    # ret_mat[i,] <- cbind(lower,upper)
   }
-  
-  colnames(ret_mat) <- c("lower","upper")
-  rownames(ret_mat) <- 1:nrow(ret_mat)
-  return(ret_mat)
+  return(ret_vec)
 }
