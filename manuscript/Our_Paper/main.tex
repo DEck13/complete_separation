@@ -66,9 +66,7 @@ We provide inference and prediction results for the maize data as well as an ext
  We analyze the \cite{agresti_categorical_2013} example with two points added, a success and a failure at $x = 50$. \\
 
 
-\noindent\textbf{Quadratic logistic regression model}: This example comes from Section 2.2 of Geyer [\citeyear{Geyer2009}]. Let $y_i =1$ for $ 12 < x_i < 24 $ and $y_i = 0$, otherwise. Also, consider the following quadratic model: 
-$$\text{logit}(p_i) = \beta_0 + \beta_1 x_i + \beta_2 x_i^2.$$
-In this case, maximum likelihood estimate (MLE) does not exist when we fit the logistic model using $\texttt{glm}$ and it complains that the algorithm did not converge. We demonstrate how to compute the one-sided confidence intervals for mean-value parameters for this example in the supplementary material. \\
+\noindent\textbf{Quadratic logistic regression model}: This example comes from Section 2.2 of Geyer [\citeyear{Geyer2009}]. In this example $y_i =1$ for $ 12 < x_i < 24 $ and $y_i = 0$, otherwise. In this case, maximum likelihood estimate (MLE) does not exist when we fit a quadratic logistic model using $\texttt{glm}$, and it complains that the algorithm did not converge. We demonstrate how to compute the one-sided confidence intervals for mean-value parameters for this example in the supplementary material. \\
 
 \noindent\textbf{Endometrial Cancer Study}: \cite{Heinze2002} firstly investigated the endometrial data set (n = 79), which was originally provided by Dr. Asseryanis from the Vienna University Medical School. The main purpose of this study was to describe histology of cases (HG) in terms of three risk factors: neovasculation (NV), endometrium height (EH) and pulsatility index of arteria uterina (PI). 30 patients was classified grading 0-II for histology (HG = 1) and 49 patients for grading III-IV (HG = 0). There are 13 patients who has neovasculization (NV = 1) and absent for 66 patients (NV = 0). Pulsatility index (PI) ranges from 0 to 49 with mean of 17.38 and median of 16.00, and endometirum height (EH) ranges from 0.27 to 3.61 with mean of 1.662 and median of 1.640. In this example, we observe the quasi-complete separation in NV.  \\
 
@@ -77,24 +75,24 @@ In this case, maximum likelihood estimate (MLE) does not exist when we fit the l
 \subsection{Logistic Regression}
 The logistic regression is the special case of the generalized linear model which the response variable follows Bernoulli distribution (i.e., $y \in \{0,1\}$) \sqcitep{GLM_paper}. By convention, we encode 1 as a ``success" and 0 as a ``failure." In logistic regression the conditional success probability at a particular $x$ is modeled as
 \begin{equation}\label{logistic_model}
-\text{Pr}(Y_i = 1 | X_i=x_i) = p_i = \frac{\exp{(x_i^{T}\beta)}}{1+\exp{(x_i^{T}\beta)}},
+\text{Pr}(Y = 1 | X = x) = \frac{\exp{(x^{T}\beta)}}{1+\exp{(x^{T}\beta)}} = p_x,
 \end{equation}
-where $\beta$ is an unknown parameter vector.
+where $\beta$ is an unknown canonical parameter vector (coefficient vector), $X$ and $Y$ are the predictor and response random variables, and $x$ is an observed value.
 
 From the linear regression's point of view, this logistic regression is equivalent to:
 \begin{equation}\label{link_function}
-g(p_i) = \log(\frac{p_i}{1-p_i}) = x_i^T\beta
+g(p_x) = \log\left(\frac{p_x}{1-p_x}\right) = x^T\beta
 \end{equation}
 where $g(x) = \log(\frac{x}{1-x})$ is a logit link (log-odds ratio).
 
 Therefore, as in classical ordinary least squares (OLS) regression, we can estimate model parameters using maximum likelihood estimation. Statistical inferences about model parameters can be obtained from estimates of the Fisher information. Unlike in OLS regression, estimates for $\hat\beta$ are not given in closed form. The log-likelihood function for the logistic regression model is
 \begin{equation}\label{likelihood}
-\log L(\beta|Y) = \sum_{i=1}^{n} y_i\log{(p_i)} + (1-y_i)\log{(1-p_i)},
+\log L(\beta|Y) = \sum_{i=1}^{n} y_i\log{(p_{x_i})} + (1-y_i)\log{(1-p_{x_i})},
 \end{equation}
 one then obtains $\hat\beta$ by solving the score function equation
 \begin{equation}\label{logit_Score}
 \frac{\partial \log{L(\beta|Y)}}{\partial \beta} = 
-\sum_{i=1}^{N} (y_i - \log{(p_i)}) x_i^T =
+\sum_{i=1}^{N} (y_i - \log{(p_{x_i})}) x_i^T =
 \sum_{i=1}^{N} [y_i + \log{(1+\exp{(-x_i^T\beta)})}] = 0.
 \end{equation}
 Conventional softwares finds $\hat\beta$ through Fisher-scoring or iteratively reweighted least squares algorithms \citep[Chapter 4]{agresti_categorical_2013}. We then obtain inferences using an estimate of the Fisher information matrix evaluated at the MLE solution $\hat{\beta}$
@@ -106,17 +104,19 @@ Conventional software provides \eqref{logit_Fisher}.
 
 \subsection{Mean-value Parameters}
 
-The parameter of primary interest is often the mean-value parameter on the scale of the response variable. This is the expected response expressed as a function of covariates.
-%From the statistical model, what we actually want to know is the expected value of response variable given data. 
-In the linear model, we can easily obtain this expected value from $\beta$ since $\text{E}(Y|X=x) = x^{T}\beta$. Plugging in $\hat{\beta}$ produces the MLE for this expectation $\widehat{\text{E}}(Y|X=x) = x^{T}\hat\beta$ with $x$ fixed. On the other hand, in the logistic model, $\text{E}(Y|X=x_{i}) = \text{Pr}(Y = 1 | X=x_{i}) = p_i$ while $\log(\frac{p_i}{1-p_i}) = x_i^T\beta$. Therefore, $\beta$ does not offer easy interpretation about changes in the expected response as the covariates change.
-%we cannot obtain the expected value of response variable in the same way as we did in the linear model.
+The parameter of primary interest is often the mean-value parameter on the scale of the response variable. This is the expected response expressed as a function of covariates. In the logistic regression model the mean-value parameter is the conditional success probability $p_x$ at some particular $x$, and, unlike in linear regression, this parameter is not easily interpreted from $\beta$. Furthermore, the natural constraints on a conditional probability corresponding to a binary response variable require an alteration to the linear model. 
 
-To get the expected value from the logistic model, we can consider the mean-value parameterization. The mean-value parameterization starts with estimating the logistic model's coefficients $\beta$ by solving the \eqref{logit_Score}. Then, $x_{i}^{T}\hat{\beta}$ corresponds to the a estimated log-odds ratio of each observation which is linked to the mean-value parameters through the change-of-parameter mappings. That is, we can obtain the mean-value parameters using the inverse logit function, $\hat{\mu} = \text{logit}^{-1}(x_{i}^{T}\hat{\beta})$. The advantage of this parameterization is now our parameters of interest shifts to the mean-value parameters from the coefficients of the model. Consequently, we can provide a more informative and intuitive inference. For example, we can tell the expected probability of success at particular $x$ which is what we desire from the statistical model (without mean-value parameterization, our interpretation on model is that as one unit of explanatory variable increases the expected change in log odds ratio of conditional probability of success is $\hat{\beta}$).
+
+In linear regression, we can easily obtain $\text{E}(Y|X=x)$ from $\beta$ since $\text{E}(Y|X=x) = x^{T}\beta$. Plugging in $\hat{\beta}$ produces the MLE for this expectation $\widehat{\text{E}}(Y|X=x) = x^{T}\hat\beta$ with $x$ fixed. On the other hand, in the logistic model, $\text{E}(Y|X=x) = \text{Pr}(Y = 1 | X=x)$ where $\log(\frac{p_{x_i}}{1-p_{x_i}}) = x_i^T\beta$. Thus, $\beta$ does not offer an easy interpretation about changes in the expected response as the covariates change, and it is therefore less useful as a parameter for understanding how $p_x$ changes with $x$. The mean-value parametrization is the primary parameter of interest in both regression contexts, but in linear regression the mean-value parameter and $\beta$ are interchangeable.
+
+Another benefit of the mean-value parameterization over $\beta$ in the logistic regression model is when complete separation exists. When complete separation exists $\beta$ is estimated to be at infinity while $p_x$ is estimated to be 0 or 1. We discuss complete separation and methods which address it in the next Section.
+
+
 
 \subsection{Complete Separation}
 \label{sec:complete_separation}
 
-Traditional maximum likelihood estimation for logistic regression does not work well when there is complete or quasi-complete separation in the data, a problem that is widespread in applications \citep{Geyer2009}.\cite{agresti_categorical_2013} defines complete separation when there exists a vector $b$ such that
+Traditional maximum likelihood estimation for logistic regression does not work well when there is complete or quasi-complete separation in the data, a problem that is widespread in applications \citep{Geyer2009}.\cite{agresti_categorical_2013} defines complete separation when there exists a vector $b$ such that 
 
 \begin{equation}\label{definition_complete_separation}
 \begin{split}
@@ -124,12 +124,15 @@ x_{i}^{T} b &> 0 \text{ whenever } y_i = 1, \\
 x_{i}^{T} b &< 0 \text{ whenever } y_i = 0.
 \end{split}
 \end{equation}
-That is, complete separation occurs when the one or more explanatory variables can perfectly predict the response variable \sqcitep{AlbertAnderson1984}. For example, as shown in the Figure~\ref{Fig:Complete_Separation_Example}, consider the following case that when $x$ is less than 50, all corresponding $y$ are $0$ and when $x$ is greater than 50, all corresponding $y$ are $1$. Suppose we are interested in a simple logistic regression model $x^T = [1, x_i]$. Then this data is completely separated with $b = [-50, 1]^T.$ Moreover, we have $\hat{p} = 0$ for $x < 50$ and $\hat{p} = 1$ for $x > 50$.
+That is, complete separation occurs when the one or more explanatory variables can perfectly predict the response variable \sqcitep{AlbertAnderson1984}. For example, as shown in the Figure~\ref{Fig:Complete_Separation_Example}, consider the following case that when $x$ is less than 50, all corresponding $y$ are $0$ and when $x$ is greater than 50, all corresponding $y$ are $1$. Suppose we are interested in a simple logistic regression model $x_i^T = [1, z_i]$. Then this data is completely separated with $b = [-50, 1]^T.$ Moreover, we have $\hat{p} = 0$ for $z < 50$ and $\hat{p} = 1$ for $z > 50$.
+
+\commentline{I changed the notation around. In particular, I wrote $x_i^T = [1, z_i]$. This means that the axis labels for figures needs to be changed.}
+
 
 \begin{figure}[!ht]
   \centering
     \includegraphics[width=0.5\textwidth]{Figures/Agresti_Complete_Separation.png}
-    \caption{Example of complete separation from Section 6.5.1 of \cite{agresti_categorical_2013}. The conventional MLE of a logistic model does not exist.}\label{Fig:Complete_Separation_Example}
+    \caption{Example of complete separation from Section 6.5.1 of \cite{agresti_categorical_2013}. The conventional MLE of a logistic model does not exist. \textbf{Maybe change the x-axis label to z}.}\label{Fig:Complete_Separation_Example}
 \end{figure}
 
 When there is complete separation, the parameter estimates $\hat\beta$ are ``at infinity,'' the iteration based estimation algorithms provide a sequence of estimates that goes to infinity, and the log likelihood becomes flat when evaluated along this sequence. The left panel of Figure \ref{Fig:asymptotes} shows the log likelihood of logistic model for this example with different working estimate from $\texttt{glm}$ function in R. We can see that each iteration, norm of $\beta$ becomes larger and asymptote of the log likelihood value goes to infinity. The right panel of Figure \ref{Fig:asymptotes} is the zoomed part of the left panel of Figure \ref{Fig:asymptotes} where the log of norm of working estimates is between 4.5 and 5. It displays the log likelihood value still approaches near zero although the left panel of Figure \ref{Fig:asymptotes} looks flat in the same region. In complete separation, the usual statistical inference is not valid. %The variance of $\hat{\beta_j}$ becomes very large because it comes from the inverse of second derivatives of the likelihood function \eqref{logit_Fisher}, and%
@@ -150,10 +153,10 @@ We use one-sided confidence intervals for the logistic model's mean-value parame
 \begin{equation} \label{CI_logistic}
 \begin{split}
     \text{minimize } & \quad -\theta_k \\
-    \text{subject to } & \sum_{i \in I}[y_{i} \log{(p_i)} + (1 - y_i) \log{(1-p_{i}})] - \log{(\alpha) \geq 0},
+    \text{subject to } & \sum_{i \in I}[y_{i} \log{(p_{x_i})} + (1 - y_i) \log{(1-p_{x_i}})] - \log{(\alpha) \geq 0},
 \end{split}
 \end{equation}
-where $\theta_k = x_k^T\beta$ for any $k \in I$, $\textit{I}$ is a index of problematic points that cause the separation, $p$ is a mean-value parameter, and $\alpha$ is a significance level. For example, Figure \ref{Fig:One_sided_CI} shows the one-sided confidence interval for the complete separation example we discussed in Section \ref{sec:complete_separation}. We can see the confidence interval increases as $x$ increases until $x = 40$ then it starts to decrease as $x$ increases from $x = 60$. Also, we have a widest interval where $x = 40$ and $x = 60$ with the length of intervals, $1-\alpha$. It means our uncertainty on estimation keep increases from $x=10$ to $x=40$ and we have the highest uncertainty near the separation occurs. Then it diminishes as it furthers away from the boundary of the separation. In $\texttt{glmdr}$, $\texttt{inference}$ function provides this confidence intervals using the sequential quadratic programming (SQP) to solve the constrained nonlinear problem \eqref{CI_logistic}. 
+where $\theta_k = x_k^T\beta$ for any $k \in I$, $\textit{I}$ is a index of problematic points that cause the separation, $p$ is a mean-value parameter, and $\alpha$ is a significance level. For example, Figure \ref{Fig:One_sided_CI} shows the one-sided confidence interval for the complete separation example we discussed in Section \ref{sec:complete_separation}. We can see the confidence interval increases as $z$ increases until $z = 40$ then it starts to decrease as $z$ increases from $z = 60$. Also, we have a widest interval where $z = 40$ and $z = 60$ with the length of intervals, $1-\alpha$. It means our uncertainty on estimation keep increases from $z=10$ to $z=40$ and we have the highest uncertainty near the separation occurs. Then it diminishes as it furthers away from the boundary of the separation. In $\texttt{glmdr}$, $\texttt{inference}$ function provides this confidence intervals using the sequential quadratic programming (SQP) to solve the constrained nonlinear problem \eqref{CI_logistic}. 
 
 \begin{figure}[!ht]
   \centering
@@ -175,6 +178,36 @@ $$w_j = \frac{{\exp(-\frac{IC_j}{2})}}{\exp(-\frac{IC_1}{2})+\exp(-\frac{IC_2}{2
 \label{sec:inference}
 
 We report the in-sample accuracy for all observations and confidence intervals for observations that occur the (quasi) complete separation to compare each method. For $\texttt{brglm}$, it is theoretically equivalent to the $\texttt{logistf}$ when $\texttt{brglm}$ uses the maximum penalized likelihood with powers of the Jeffreys prior as penalty. However, $\texttt{brglm}$ fails to converge for the maize example, meanwhile, $\texttt{logistf}$ converges. Therefore, we use $\texttt{logistf}$'s result for $\texttt{brglm}$ in maize example. For confidence intervals, we compute the average length of one-sided confidence interval for $\texttt{glmdr}$ and average length of Wilson intervals for $\texttt{bayesglm}$,  $\texttt{brglm}$ ($\texttt{logistf}$) and linear models (since the predicted value of linear model does not have to fall into $[0,1]$ range, we assign $1$ for any predicted values greater than $1$ and $0$ for negative values). In Table \ref{Tab:inference}, we can see all methods show the equivalent in-sample accuracy for the complete separation and quasi separation examples. Meanwhile, the logistic models, $\texttt{glmdr}$, $\texttt{bayesglm}$, and  $\texttt{brglm}$ ($\texttt{logistf}$), display the higher in-sample accuracy for quadratic, endometrial, and maize examples in comparison to the linear model. Within these examples, $\texttt{glmdr}$ has the highest in-sample accuracy in maize example than other two logistic models. For confidence intervals, $\texttt{glmdr}$ demonstrates the smallest length in all examples. Especially, in quadratic and endometrial examples, its lengths of confidence intervals are significantly smaller than other methods. Two logistic models, $\texttt{bayesglm}$ and $\texttt{brglm}$ ($\texttt{logistf}$) generally shows smaller lengths of confidence intervals but they are not highly different from that of linear model in all examples. This result suggests that linear model perform worse than logistic models, and $\texttt{glmdr}$ which solves the complete separation within the MLE framework produces the most accurate inference for (quasi) complete separation problem.
+
+
+\commentline{
+I think the tables can formatted better. Perhaps something like the following would be better, especially when presenting the prediction results: \\
+
+\begin{tabular}{ll|cc}
+		  & & Complete Separation & ... \\
+		  \hline
+    glmdr & accuracy & 100\% & \\
+	 	  & length & 0.55 & \\
+	bayesglm  & accuracy & 100\% & \\ 
+			  & length & 0.83 & \\ 
+\end{tabular}
+
+\vspace{0.5cm} Or maybe the following would be better: \\
+
+\begin{tabular}{ll|cc}
+		  & & Complete Separation & ... \\
+		  \hline
+    accuracy & glmdr & 100\% & \\
+	 	  & bayesglm & 100\% & \\
+	 	  & \vdots & \vdots & \vdots \\
+	length  & glmdr & 0.55 & \\ 
+			  & bayesglm & 0.83 & \\ 
+\end{tabular}
+
+\vspace{0.5cm} I personally think the second format is better.
+}
+
+
 
 \begin{table}[!ht]
 \caption{Model performances for all examples.}
@@ -222,6 +255,14 @@ We present the computational cost of each method in Table \ref{Tab:execution_tim
 
 Considering all aspects, linear model performs well despite of the binary response. It shows comparable or better out-of-sample accuracy, small prediction intervals and lowest computational cost. Among logistic models, $\texttt{bayesglm}$ presents the most rounded performance with fairly low computational cost. $\texttt{glmdr}$ sometimes shows the highest out-of-sample accuracy and often smallest length of prediction intervals. But, it may not be scalable to the large datasets due to high computational cost. $\texttt{brglm}$ rarely achieve the highest out-of-sample accuracy but its computational cost in large datasets is major issue.
 
+\commentline{
+The last paragraph should be changed. It looks like all of the methods are pretty comparable, but there are some noticeable differences. For example, glmdr is the only method that performs well on the quasi separation dataset (remember that 95\% is the target). The other difference is in computational costs and the brglm2/logistf seemingly fails when applied on the Maize dataset. It also looks like glmdr offers the smallest prediction regions across the board except in the quasi separation example. This is interesting since the glmdr method is the only method close to the desired accuracy in this example.
+
+}
+
+
+
+
 \begin{table}[!ht]
 \caption{Computational cost for all examples.}
 \caption*{\footnotesize \textit{glmdr denotes Generalized Linear Model Done Right \sqcitep{glmdr_package}, bayesglm denotes Generalized Linear Model with Student-t prior distribution \sqcitep{Gelman2008}, brglm denotes Bias Reduction in Generalized Linear Models \sqcitep{Kosmidis2009}, logistf denotes Logistic model with Firth's modified score function \sqcitep{Heinze2002}, and linear denotes the multiple linear model using ordinary least squares.}}
@@ -240,7 +281,7 @@ Considering all aspects, linear model performs well despite of the binary respon
 
 \section{Discussion}
 
-In the classification problem, the logistic model is one of the most common statistical model we can attempt. Although linear model is attractive option to use because of its easiness and handiness, the binary response variable makes the linear model violate necessary assumptions such as homoscedasticity and linearity (i.e. Gauss-Markov assumptions) as well as normality. Therefore, even though results from Section \ref{sec:inference} and \ref{sec:prediction} display that the performance of linear model is comparable or better than the logistic models, we can not fully utilize asymptotic properties of linear model and make a proper inference such as significance tests for coefficients.
+In the classification problem, the logistic model is one of the most common statistical model we can attempt. Although linear model is attractive option to use because of its easiness and handiness, the binary response variable makes the linear model violate necessary assumptions such as homoscedasticity and linearity (i.e. Gauss-Markov assumptions) as well as normality. Therefore, even though results from Section \ref{sec:inference} and \ref{sec:prediction} display that the performance of linear model is comparable to the logistic models, we can not fully utilize asymptotic properties of linear model and make a proper inference such as significance tests for coefficients.
 
 On the other hand, $\texttt{glmdr}$ is considered to be the most preferable logistic model based on its overall performance in the inference and prediction. The main strength of $\texttt{glmdr}$ is it provides the best inference because the way that $\texttt{glmdr}$ handles the separation problem is the true remedy to the traditional $\texttt{glm}$'s separation issue. It solves the separation issue within the maximum likelihood estimation framework unlike other two logistic models and estimates the probability of success by finding the MLE in the Barndorff-Nielsen completion [\citeyear{barndorff-nielsen_1978}] based on approximate null eigenvectors of the Fisher information matrix. Meanwhile, other two logistic models solve the separation problem by switching the problem settings. For example, $\texttt{bayesglm}$ adopts a Bayesian approach which scales the data first and then places Cauchy distribution as a prior distribution on the coefficients and $\texttt{brglm}$ modifies the score function to produce finite coefficients. As a result, not only are both models' results in inference not the best, but it is also hard to see their outputs as a true solution for separation problem of $\texttt{glm}$. In prediction, $\texttt{glmdr}$ often shows the highest out-of-sample accuracy with the narrowest length of prediction intervals with acceptable computational cost. It may take much time when we have a large number of observations, but the complete separation is likely to occur when we have a small sample size. Thus, high computational cost in large sample size should not be the major issue in $\texttt{glmdr}$.
 
