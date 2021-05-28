@@ -107,7 +107,7 @@ Conventional software provides \eqref{logit_Fisher}.
 The parameter of primary interest is often the mean-value parameter on the scale of the response variable. This is the expected response expressed as a function of covariates. In the logistic regression model the mean-value parameter is the conditional success probability $p_x$ at some particular $x$, and, unlike in linear regression, this parameter is not easily interpreted from $\beta$. Furthermore, the natural constraints on a conditional probability corresponding to a binary response variable require an alteration to the linear model. 
 
 
-In linear regression, we can easily obtain $\text{E}(Y|X=x)$ from $\beta$ since $\text{E}(Y|X=x) = x^{T}\beta$. Plugging in $\hat{\beta}$ produces the MLE for this expectation $\widehat{\text{E}}(Y|X=x) = x^{T}\hat\beta$ with $x$ fixed. On the other hand, in the logistic model, $\text{E}(Y|X=x) = \text{Pr}(Y = 1 | X=x)$ where $\log(\frac{p_{x_i}}{1-p_{x_i}}) = x_i^T\beta$. Thus, $\beta$ does not offer an easy interpretation about changes in the expected response as the covariates change, and it is therefore less useful as a parameter for understanding how $p_x$ changes with $x$. The mean-value parametrization is the primary parameter of interest in both regression contexts, but in linear regression the mean-value parameter and $\beta$ are interchangeable.
+In linear regression, we can easily obtain $\text{E}(Y|X=x)$ from $\beta$ since $\text{E}(Y|X=x) = x^{T}\beta$. Plugging in $\hat{\beta}$ produces the MLE for this expectation $\widehat{\text{E}}(Y|X=x) = x^{T}\hat\beta$ with $x$ fixed. On the other hand, in the logistic model, $\text{E}(Y|X=x) = \text{Pr}(Y = 1 | X=x)$ where $\log(\frac{p_{x}}{1-p_{x}}) = x^T\beta$. Thus, $\beta$ does not offer an easy interpretation about changes in the expected response as the covariates change, and it is therefore less useful as a parameter for understanding how $p_x$ changes with $x$. The mean-value parametrization is the primary parameter of interest in both regression contexts, but in linear regression the mean-value parameter and $\beta$ are interchangeable.
 
 Another benefit of the mean-value parameterization over $\beta$ in the logistic regression model is when complete separation exists. When complete separation exists $\beta$ is estimated to be at infinity while $p_x$ is estimated to be 0 or 1. We discuss complete separation and methods which address it in the next Section.
 
@@ -116,7 +116,7 @@ Another benefit of the mean-value parameterization over $\beta$ in the logistic 
 \subsection{Complete Separation}
 \label{sec:complete_separation}
 
-Traditional maximum likelihood estimation for logistic regression does not work well when there is complete or quasi-complete separation in the data, a problem that is widespread in applications \citep{Geyer2009}.\cite{agresti_categorical_2013} defines complete separation when there exists a vector $b$ such that 
+Traditional maximum likelihood estimation for logistic regression does not work well when there is complete or quasi-complete separation in the data, a problem that is widespread in applications \citep{Geyer2009}. \cite{agresti_categorical_2013} defines complete separation when there exists a vector $b$ such that 
 
 \begin{equation}\label{definition_complete_separation}
 \begin{split}
@@ -126,13 +126,10 @@ x_{i}^{T} b &< 0 \text{ whenever } y_i = 0.
 \end{equation}
 That is, complete separation occurs when the one or more explanatory variables can perfectly predict the response variable \sqcitep{AlbertAnderson1984}. For example, as shown in the Figure~\ref{Fig:Complete_Separation_Example}, consider the following case that when $x$ is less than 50, all corresponding $y$ are $0$ and when $x$ is greater than 50, all corresponding $y$ are $1$. Suppose we are interested in a simple logistic regression model $x_i^T = [1, z_i]$. Then this data is completely separated with $b = [-50, 1]^T.$ Moreover, we have $\hat{p} = 0$ for $z < 50$ and $\hat{p} = 1$ for $z > 50$.
 
-\commentline{I changed the notation around. In particular, I wrote $x_i^T = [1, z_i]$. This means that the axis labels for figures needs to be changed.}
-
-
 \begin{figure}[!ht]
   \centering
     \includegraphics[width=0.5\textwidth]{Figures/Agresti_Complete_Separation.png}
-    \caption{Example of complete separation from Section 6.5.1 of \cite{agresti_categorical_2013}. The conventional MLE of a logistic model does not exist. \textbf{Maybe change the x-axis label to z}.}\label{Fig:Complete_Separation_Example}
+    \caption{Example of complete separation from Section 6.5.1 of \cite{agresti_categorical_2013}. The conventional MLE of a logistic model does not exist.}\label{Fig:Complete_Separation_Example}
 \end{figure}
 
 When there is complete separation, the parameter estimates $\hat\beta$ are ``at infinity,'' the iteration based estimation algorithms provide a sequence of estimates that goes to infinity, and the log likelihood becomes flat when evaluated along this sequence. The left panel of Figure \ref{Fig:asymptotes} shows the log likelihood of logistic model for this example with different working estimate from $\texttt{glm}$ function in R. We can see that each iteration, norm of $\beta$ becomes larger and asymptote of the log likelihood value goes to infinity. The right panel of Figure \ref{Fig:asymptotes} is the zoomed part of the left panel of Figure \ref{Fig:asymptotes} where the log of norm of working estimates is between 4.5 and 5. It displays the log likelihood value still approaches near zero although the left panel of Figure \ref{Fig:asymptotes} looks flat in the same region. In complete separation, the usual statistical inference is not valid. %The variance of $\hat{\beta_j}$ becomes very large because it comes from the inverse of second derivatives of the likelihood function \eqref{logit_Fisher}, and%
@@ -144,7 +141,7 @@ The standard errors of predicted probabilities of success are very small, which 
     \caption{\textbf{Left panel}: Log likelihood values of logistic model at different working estimates. Blue dot represents the log likelihood value at each iteration. \textbf{Right panel:} Zoom in view of a log likelihood values of logistic model where log of norm of working estimates lie between 4.5 and 5.}\label{Fig:asymptotes}
 \end{figure}
 
-Quasi-complete separation is another case of separation that there are both a success and a failure on the hyperplane that separates the successes from the failures \sqcitep{lesaffre_albert_1989}. For instance, we can consider additional two points that $x = 50$ with $y=1$ and $y=0$ to the previous complete separation example. That is, we have $y_i = 0$ for $x \leq 50$ and $y_i =1$ for $x \geq 50$. In this case, the maximized log likelihood is always negative and we experience same phenomenon as the complete separation case.
+Quasi-complete separation is another case of separation that there are both a success and a failure on the hyperplane that separates the successes from the failures \sqcitep{lesaffre_albert_1989}. For instance, we can consider additional two points that $z = 50$ with $y=1$ and $y=0$ to the previous complete separation example. That is, we have $y_i = 0$ for $z \leq 50$ and $y_i =1$ for $z \geq 50$. In this case, the maximized log likelihood is always negative and we experience same phenomenon as the complete separation case.
 
 \subsection{One-Sided Confidence Interval}
 
@@ -161,16 +158,16 @@ where $\theta_k = x_k^T\beta$ for any $k \in I$, $\textit{I}$ is a index of prob
 \begin{figure}[!ht]
   \centering
     \includegraphics[width=0.5\textwidth]{Figures/One_sided_CI.png}
-    \caption{One-sided 95\% confidence interval for the example of complete separation from Section \ref{sec:complete_separation}. Solid dot represents the observed value and bar shows the interval. $\hat{p}$ is the estimated probability of a success given $x$. }\label{Fig:One_sided_CI}
+    \caption{One-sided 95\% confidence interval for the example of complete separation from Section \ref{sec:complete_separation}. Solid dot represents the observed value and bar shows the interval. $\hat{p}_x$ is the estimated probability of a success given $z$. }\label{Fig:One_sided_CI}
 \end{figure}
 
 \subsection{Prediction}
 
-Prediction in $\texttt{glmdr}$ framework is different from that of the conventional statistical model because we do not have a finite estimate. Specifically, in the traditional sense, we can compute the predicted value for new data point from the logistic model using $\hat{p}_{\text{pred}} = (1 + \exp{(-x_{\text{new}}^T \hat{\beta})})^{-1}.$ However, when the complete separation presents, this approach does not work. Therefore, we propose a new method for the prediction that we fit two possible models for new data point with different value of a response variable then compute the weighted conditional probability of a success.
+Prediction in $\texttt{glmdr}$ framework is different from that of the conventional statistical model because we do not have a finite estimate. Specifically, in the traditional sense, we can compute the predicted value for new data point from the logistic model using $\hat{p}_{x_{\text{pred}}} = (1 + \exp{(-x_{\text{new}}^T \hat{\beta})})^{-1}.$ However, when the complete separation presents, this approach does not work. Therefore, we propose a new method for the prediction that we fit two possible models for new data point with different value of a response variable then compute the weighted conditional probability of a success.
 
 Given new data $x_{\text{new}}$ and training set $x_{\text{train}}$, we generate testing set by combing training set and each observation from new data. That is, $x_{i,\text{test}} = x_{\text{train}} \cup x_{i,\text{new}}$
-where $i$ is a index of whole new data. Then, we construct two testing labels that one has $y_{\text{new}}=0$ and the other has $y_{\text{new}}=1$ for new data point. Based on these two datasets, we fit two logistic models to compute the estimated probability of a success for new data points, $\hat{p}_1$ and $\hat{p}_2$. Since we do not know which model is fitted from the true value of response variable, we compare the weight of evidence for each model based on the Akaike weights for the model selection \sqcitep{burnham_anderson_2002}. Let $w_j$ be the weight for model $j$ defined by:
-$$w_j = \frac{{\exp(-\frac{IC_j}{2})}}{\exp(-\frac{IC_1}{2})+\exp(-\frac{IC_2}{2})},$$ where $IC_j$ is the information criteria of model $j$. Then we can calculate the model averaged estimate, $\hat{p}^* = \sum_{j=1}^2 w_j \hat{p}_j$. This averaged estimate is especially useful for prediction in our framework because we can use all predicted probabilities from models we have. For $IC$, since our sample size is more likely to be small when the complete separation presents, we recommend the Akaike information criteria corrected (AICc). The primary reason is that AICc does not have an overfit problem despite of small sample size \sqcitep{AICc_Paper}. Also, it converges to Akaike information criteria (AIC) when we have large sample size, and AIC is asymptotically equivalent to choice of model by leave-one-out cross validation \sqcitep{Stone_1977}. Meanwhile, Bayesian information criteria (BIC) attempts to find the true model among the sets of candidate models which is not appropriate our prediction framework \sqcitep{schwarz_1978}. We then label $1$ if $\hat{p}^* \geq C^*$ and $0$ if $\hat{p}^* < C^*$ where $C^*$ is the optimal cut-off that maximizes the overall accuracy. The main motivation of using optimal cut-off is that threshold of $0.5$ produces unreliable and poor model accuracy when the response variable is highly unbalanced \sqcitep{Freeman_2008}. For prediction intervals, we construct the Wilson intervals [\citeyear{wilson_1927}] for predicted probabilities. Wilson intervals show better coverage probability although $\hat{p}$ is near $0$ and $1$ boundaries in comparison to the standard binomial confidence interval because Wilson intervals are asymmetric \sqcitep{Brown2001}. Detailed implementation and examples are given in the supplementary materials.
+where $i$ is a index of whole new data. Then, we construct two testing labels that one has $y_{\text{new}}=0$ and the other has $y_{\text{new}}=1$ for new data point. Based on these two datasets, we fit two logistic models to compute the estimated probability of a success for new data points, $\hat{p}_{x_0}$ and $\hat{p}_{x_1}$. Since we do not know which model is fitted from the true value of response variable, we compare the weight of evidence for each model based on the Akaike weights for the model selection \sqcitep{burnham_anderson_2002}. Let $w_j$ be the weight for model $j$ defined by:
+$$w_j = \frac{{\exp(-\frac{IC_j}{2})}}{\exp(-\frac{IC_1}{2})+\exp(-\frac{IC_2}{2})},$$ where $IC_j$ is the information criteria of model $j$. Then we can calculate the model averaged estimate, $\hat{p}^{*}_{x} = \sum_{j=0}^{1} w_j \hat{p}_{x_j}$. This averaged estimate is especially useful for prediction in our framework because we can use all predicted probabilities from models we have. For $IC$, since our sample size is more likely to be small when the complete separation presents, we recommend the Akaike information criteria corrected (AICc). The primary reason is that AICc does not have an overfit problem despite of small sample size \sqcitep{AICc_Paper}. Also, it converges to Akaike information criteria (AIC) when we have large sample size, and AIC is asymptotically equivalent to choice of model by leave-one-out cross validation \sqcitep{Stone_1977}. Meanwhile, Bayesian information criteria (BIC) attempts to find the true model among the sets of candidate models which is not appropriate our prediction framework \sqcitep{schwarz_1978}. We then label $1$ if $\hat{p}^{*}_{x} \geq C^*$ and $0$ if $\hat{p}^{*}_{x} < C^*$ where $C^*$ is the optimal cut-off that maximizes the overall accuracy. The main motivation of using optimal cut-off is that threshold of $0.5$ produces unreliable and poor model accuracy when the response variable is highly unbalanced \sqcitep{Freeman_2008}. For prediction intervals, we construct the Wilson intervals [\citeyear{wilson_1927}] for predicted probabilities. Wilson intervals show better coverage probability although $\hat{p}_{x}$ is near $0$ and $1$ boundaries in comparison to the standard binomial confidence interval because Wilson intervals are asymmetric \sqcitep{Brown2001}. Detailed implementation and examples are given in the supplementary materials.
 
 \section{Results}
 
@@ -179,51 +176,22 @@ $$w_j = \frac{{\exp(-\frac{IC_j}{2})}}{\exp(-\frac{IC_1}{2})+\exp(-\frac{IC_2}{2
 
 We report the in-sample accuracy for all observations and confidence intervals for observations that occur the (quasi) complete separation to compare each method. For $\texttt{brglm}$, it is theoretically equivalent to the $\texttt{logistf}$ when $\texttt{brglm}$ uses the maximum penalized likelihood with powers of the Jeffreys prior as penalty. However, $\texttt{brglm}$ fails to converge for the maize example, meanwhile, $\texttt{logistf}$ converges. Therefore, we use $\texttt{logistf}$'s result for $\texttt{brglm}$ in maize example. For confidence intervals, we compute the average length of one-sided confidence interval for $\texttt{glmdr}$ and average length of Wilson intervals for $\texttt{bayesglm}$,  $\texttt{brglm}$ ($\texttt{logistf}$) and linear models (since the predicted value of linear model does not have to fall into $[0,1]$ range, we assign $1$ for any predicted values greater than $1$ and $0$ for negative values). In Table \ref{Tab:inference}, we can see all methods show the equivalent in-sample accuracy for the complete separation and quasi separation examples. Meanwhile, the logistic models, $\texttt{glmdr}$, $\texttt{bayesglm}$, and  $\texttt{brglm}$ ($\texttt{logistf}$), display the higher in-sample accuracy for quadratic, endometrial, and maize examples in comparison to the linear model. Within these examples, $\texttt{glmdr}$ has the highest in-sample accuracy in maize example than other two logistic models. For confidence intervals, $\texttt{glmdr}$ demonstrates the smallest length in all examples. Especially, in quadratic and endometrial examples, its lengths of confidence intervals are significantly smaller than other methods. Two logistic models, $\texttt{bayesglm}$ and $\texttt{brglm}$ ($\texttt{logistf}$) generally shows smaller lengths of confidence intervals but they are not highly different from that of linear model in all examples. This result suggests that linear model perform worse than logistic models, and $\texttt{glmdr}$ which solves the complete separation within the MLE framework produces the most accurate inference for (quasi) complete separation problem.
 
-
-\commentline{
-I think the tables can formatted better. Perhaps something like the following would be better, especially when presenting the prediction results: \\
-
-\begin{tabular}{ll|cc}
-		  & & Complete Separation & ... \\
-		  \hline
-    glmdr & accuracy & 100\% & \\
-	 	  & length & 0.55 & \\
-	bayesglm  & accuracy & 100\% & \\ 
-			  & length & 0.83 & \\ 
-\end{tabular}
-
-\vspace{0.5cm} Or maybe the following would be better: \\
-
-\begin{tabular}{ll|cc}
-		  & & Complete Separation & ... \\
-		  \hline
-    accuracy & glmdr & 100\% & \\
-	 	  & bayesglm & 100\% & \\
-	 	  & \vdots & \vdots & \vdots \\
-	length  & glmdr & 0.55 & \\ 
-			  & bayesglm & 0.83 & \\ 
-\end{tabular}
-
-\vspace{0.5cm} I personally think the second format is better.
-}
-
-
-
 \begin{table}[!ht]
 \caption{Model performances for all examples.}
 \caption*{\footnotesize \textit{glmdr denotes Generalized Linear Model Done Right \sqcitep{glmdr_package}, bayesglm denotes Generalized Linear Model with Student-t prior distribution \sqcitep{Gelman2008}, brglm denotes Bias Reduction in Generalized Linear Models \sqcitep{Kosmidis2009}, logistf denotes Logistic model with Firth's modified score function \sqcitep{Heinze2002}, and linear denotes the multiple linear model using ordinary least squares.}}\label{Tab:inference}
 \centering
     \resizebox{\columnwidth}{!}{
-    \begin{tabular}{lcccccccc}
-    & \multicolumn{4}{c}{in-sample accuracy} &\multicolumn{4}{c}{average length of confidence intervals}\\ 
-    & \multicolumn{1}{l}{\textbf{glmdr}} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{brglm2 / logistf} & \multicolumn{1}{l}{linear} & \multicolumn{1}{l}{\textbf{glmdr} } & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{brglm2 / logistf} & \multicolumn{1}{l}{linear}  \\
-    \hline
-    Complete Separation & 100 \% & 100 \% & 100 \% & 100 \% & 0.55 & 0.83 & 0.84 & 0.83 \\
-    Quasi Separation & 90 \% & 90 \% & 90 \% & 90 \% & 0.31 & 0.83 & 0.83 & 0.83 \\
-    Quadratic & 100 \% & 100 \% & 100 \% & 90.00 \% & 0.20 & 0.82 & 0.81 & 0.86 \\
-    Endometrial & 88.61 \% & 88.61 \% & 88.61 \% & 86.08 \% & 0.19 & 0.80 & 0.81 & 0.81 \\
-    Maize & 87.14 \% & 87.07 \% & 87.01 \% & 86.81 \% & 0.56 & 0.81 & 0.83 & 0.84                      
-    \end{tabular}
+    \begin{tabular}{ll|ccccc}
+ &  & Complete Separation & Quasi Separation & Quadratic & Endometrial & Maize \\ \hline
+accuracy & glmdr & 100 \% & 90 \% & 100 \% & 88.61 \% & 87.14 \% \\
+ & bayesglm & 100 \% & 90 \% & 100 \% & 88.61 \% & 87.07 \% \\
+ & brglm / logistf & 100 \% & 90 \% & 100 \% & 88.61 \% & 87.01 \% \\
+ & linear & 100 \% & 90 \% & 90 \% & 86.08 \% & 86.81 \% \\
+length & glmdr & 0.55 & 0.31 & 0.20 & 0.19 & 0.56 \\
+ & bayesglm & 0.83 & 0.83 & 0.82 & 0.80 & 0.81 \\
+ & brglm / logistf & 0.84 & 0.83 & 0.81 & 0.81 & 0.83 \\
+ & linear & 0.83 & 0.83 & 0.86 & 0.81 & 0.84
+\end{tabular}
     }
 \end{table}
 
@@ -231,59 +199,38 @@ I think the tables can formatted better. Perhaps something like the following wo
 \label{sec:prediction}
 
 
-\begin{table}[!ht]
-\caption{Prediction results for all examples.}
+\begin{table}[!hb]
+\caption{Prediction results and computational cost for all examples.}
 \caption*{\footnotesize \textit{glmdr denotes Generalized Linear Model Done Right \sqcitep{glmdr_package}, bayesglm denotes Generalized Linear Model with Student-t prior distribution \sqcitep{Gelman2008}, brglm denotes Bias Reduction in Generalized Linear Models \sqcitep{Kosmidis2009}, logistf denotes Logistic model with Firth's modified score function \sqcitep{Heinze2002}, and linear denotes the multiple linear model using ordinary least squares.}}\label{Tab:prediction}
 \centering
     \resizebox{\columnwidth}{!}{
-    \begin{tabular}{lcccccccc}
-    & \multicolumn{4}{c}{out-of-sample accuracy} &\multicolumn{4}{c}{average length of prediction intervals}\\ 
-    & \multicolumn{1}{l}{\textbf{glmdr}} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{brglm2 / logistf} & \multicolumn{1}{l}{linear} & \multicolumn{1}{l}{\textbf{glmdr} } & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{brglm2 / logistf} & \multicolumn{1}{l}{linear}  \\
-    \hline
-    Complete Separation & 87.5 \% & 100 \% & 100 \% & 100 \%  & 0.821 & 0.839 & 0.843 & 0.833\\
-    Quasi Separation & 90 \% & 80 \% & 80 \% & 80 \%  & 0.865 & 0.845 & 0.847 & 0.844\\
-    Quadratic & 93.33 \% & 93.33 \% & 100 \% & 90.00 \% & 0.807 & 0.828 & 0.813 & 0.861\\
-    Endometrial & 87.34 \% & 86.08 \% & 86.08 \% & 86.08 \% & 0.839 & 0.843 & 0.844 & 0.851\\
-    Maize & 86.04 \% & 86.36 \% & 86.30 \% & 86.55 \% & 0.836 & 0.837 & 0.837 & 0.839             
-    \end{tabular}
-    }
+    \begin{tabular}{ll|ccccc}
+ &  & Complete Separation & Quasi Separation & Quadratic & Endometrial & Maize \\ \hline
+accuracy & glmdr & 87.5 \% & 90 \% & 93.33 \% & 87.34 \% & 86.04 \% \\
+ & bayesglm & 100 \% & 80 \% & 93.33 \% & 86.08 \% & 86.36 \% \\
+ & brglm / logistf & 100 \% & 80 \% & 100 \% & 86.08 \% & 86.30 \% \\
+ & linear & 100 \% & 80 \% & 90 \% & 86.08 \% & 86.55 \% \\
+length & glmdr & 0.821 & 0.865 & 0.807 & 0.839 & 0.836 \\
+ & bayesglm & 0.839 & 0.845 & 0.828 & 0.843 & 0.837 \\
+ & brglm / logistf & 0.843 & 0.847 & 0.813 & 0.844 & 0.837 \\
+ & linear & 0.833 & 0.844 & 0.861 & 0.851 & 0.839 \\
+cost & glmdr & 0.13 secs & 0.27 secs & 0.31 secs & 1.06 secs & 4.74 mins \\
+ & bayesglm & 0.11 secs & 0.12 secs & 0.35 secs & 0.31 secs & 45.35 secs \\
+ & brglm / logistf & 0.19 secs & 0.19 secs & 0.44 secs & 0.49 secs & 2.26 hours \\
+ & linear & 0.07 secs & 0.06 secs & 0.09 secs & 0.14 secs & 4.63 secs
+\end{tabular}}
 \end{table}
+To compare the performance of prediction, we compare out-of-sample accuracy, prediction intervals and computational cost. We use the leave-one-out cross validation (LOOCV) for out-of sample accuracy, Wilson intervals for the prediction intervals, and $\texttt{proc.time}$ function in R to measure the execution time. In Table \ref{Tab:prediction}, we can see all methods except for $\texttt{glmdr}$ correctly classify all 8 data points in complete separation example. Meanwhile, $\texttt{glmdr}$ misclassifies one data point near the boundary where the complete separation occurs. On the other hands, $\texttt{glmdr}$ shows the highest out-of-sample accuracy in quasi complete separation and endometrial examples where other three methods perform the same. In quadratic example, $\texttt{brglm}$ performs the best followed by other two logistic models and linear model, but linear model is better than the logistic models in maize data although their differences are not large. This result is surprising because the linear model is generally not recommended for binary classification, yet it shows a better performance than the logistic models. For prediction intervals, overall there is no significant difference between each method. We notice that $\texttt{glmdr}$ has the smallest lengths of prediction intervals in all examples but for the quasi complete separation example where the linear model displays the smallest length of prediction intervals. This is an interesting result because out-of-sample accuracy of $\texttt{glmdr}$ in this example is the highest.
 
-To compare the performance of prediction, we compare out-of-sample accuracy, prediction intervals and computational cost. We use the leave-one-out cross validation (LOOCV) for out-of sample accuracy, Wilson intervals for the prediction intervals, and $\texttt{proc.time}$ function in R to measure the execution time. In Table \ref{Tab:prediction}, we can see all methods except for $\texttt{glmdr}$ correctly classify all 8 data points in complete separation example. Meanwhile, $\texttt{glmdr}$ misclassifies one data point near the boundary where the complete separation occurs. On the other hands, $\texttt{glmdr}$ shows the highest out-of-sample accuracy in quasi complete separation and endometrial examples where other three methods perform the same. In quadratic example, $\texttt{brglm}$ performs the best followed by other two logistic models and linear model, but linear model is better than the logistic models in maize data although their differences are not large. This result is surprising because the linear model is generally not recommended for binary classification, yet it shows a better performance than the logistic models. For prediction intervals, overall there is no significant difference between each method. We notice that $\texttt{glmdr}$ has the smallest lengths of prediction intervals in all examples but for the quasi complete separation example where the linear model displays the smallest length of prediction intervals. 
+We present the computational cost of each method in Table \ref{Tab:prediction}. In all examples, linear model is much faster than logistic models. Although there is no significant difference in complete separation, quasi complete separation, quadratic, and endometrial examples, computational cost of $\texttt{glmdr}$ increases much in maize example because execution time for $\texttt{glmdr}$ increases as it requires more computations to solve the optimization problem if the data point to be predicted occur the separation. Similarly, $\texttt{brglm}$ is notably slow because it needs to handle optimization problem to find the penalized MLE for each iteration. However, $\texttt{bayesglm}$ does not suffer this issue because it does not carry the computation for the optimization problem in their method.
 
-We present the computational cost of each method in Table \ref{Tab:execution_time}. In all examples, linear model is much faster than logistic models. Although there is no significant difference in complete separation, quasi complete separation, quadratic, and endometrial examples, computational cost of $\texttt{glmdr}$ increases much in maize example because execution time for $\texttt{glmdr}$ increases as it requires more computations to solve the optimization problem if the data point to be predicted occur the separation. Similarly, $\texttt{brglm}$ is notably slow because it needs to handle optimization problem to find the penalized MLE for each iteration. However, $\texttt{bayesglm}$ does not suffer this issue because it does not carry the computation for the optimization problem in their method.
-
-Considering all aspects, linear model performs well despite of the binary response. It shows comparable or better out-of-sample accuracy, small prediction intervals and lowest computational cost. Among logistic models, $\texttt{bayesglm}$ presents the most rounded performance with fairly low computational cost. $\texttt{glmdr}$ sometimes shows the highest out-of-sample accuracy and often smallest length of prediction intervals. But, it may not be scalable to the large datasets due to high computational cost. $\texttt{brglm}$ rarely achieve the highest out-of-sample accuracy but its computational cost in large datasets is major issue.
-
-\commentline{
-The last paragraph should be changed. It looks like all of the methods are pretty comparable, but there are some noticeable differences. For example, glmdr is the only method that performs well on the quasi separation dataset (remember that 95\% is the target). The other difference is in computational costs and the brglm2/logistf seemingly fails when applied on the Maize dataset. It also looks like glmdr offers the smallest prediction regions across the board except in the quasi separation example. This is interesting since the glmdr method is the only method close to the desired accuracy in this example.
-
-}
-
-
-
-
-\begin{table}[!ht]
-\caption{Computational cost for all examples.}
-\caption*{\footnotesize \textit{glmdr denotes Generalized Linear Model Done Right \sqcitep{glmdr_package}, bayesglm denotes Generalized Linear Model with Student-t prior distribution \sqcitep{Gelman2008}, brglm denotes Bias Reduction in Generalized Linear Models \sqcitep{Kosmidis2009}, logistf denotes Logistic model with Firth's modified score function \sqcitep{Heinze2002}, and linear denotes the multiple linear model using ordinary least squares.}}
-\label{Tab:execution_time}
-\centering
-    \begin{tabular}{lccccccccc}
-    & \multicolumn{1}{l}{\textbf{glmdr}} & \multicolumn{1}{l}{bayesglm} & \multicolumn{1}{l}{brglm2 / logistf} & \multicolumn{1}{l}{linear}\\
-    \hline
-    Complete Separation & 0.13 secs & 0.11 secs & 0.19 secs & 0.07 secs  \\
-    Quasi Separation & 0.27 secs & 0.12 secs & 0.19 secs & 0.06 secs  \\
-    Quadratic & 0.31 secs & 0.35 secs & 0.44 secs & 0.09 secs \\
-    Endometrial & 1.06 secs & 0.31 secs & 0.59 secs & 0.14 secs \\
-    Maize & 4.74 mins & 45.35 secs & 2.26 hours & 4.63 secs
-    \end{tabular}
-\end{table}
+Considering all aspects, linear model performs well despite of the binary response. It shows comparable or better out-of-sample accuracy, small prediction intervals and lowest computational cost. Among logistic models, all three methods perform comparably. However, there are several notable differences. $\texttt{glmdr}$ provides the smallest lengths of prediction intervals except in the quasi separation example. It also shows better performance in quasi separation datasets (i.e., quasi separation and endometrial examples). But, it may not be scalable to the large datasets due to relatively high computational cost. $\texttt{bayesglm}$ presents the most rounded performance with fairly low computational cost. $\texttt{brglm}$ achieves the highest out-of-sample accuracy in quadratic example, but $\texttt{brglm}$ fails to converge in maize example and alternative method, $\texttt{logistf}$, is very costly.
 
 \section{Discussion}
 
 In the classification problem, the logistic model is one of the most common statistical model we can attempt. Although linear model is attractive option to use because of its easiness and handiness, the binary response variable makes the linear model violate necessary assumptions such as homoscedasticity and linearity (i.e. Gauss-Markov assumptions) as well as normality. Therefore, even though results from Section \ref{sec:inference} and \ref{sec:prediction} display that the performance of linear model is comparable to the logistic models, we can not fully utilize asymptotic properties of linear model and make a proper inference such as significance tests for coefficients.
 
-On the other hand, $\texttt{glmdr}$ is considered to be the most preferable logistic model based on its overall performance in the inference and prediction. The main strength of $\texttt{glmdr}$ is it provides the best inference because the way that $\texttt{glmdr}$ handles the separation problem is the true remedy to the traditional $\texttt{glm}$'s separation issue. It solves the separation issue within the maximum likelihood estimation framework unlike other two logistic models and estimates the probability of success by finding the MLE in the Barndorff-Nielsen completion [\citeyear{barndorff-nielsen_1978}] based on approximate null eigenvectors of the Fisher information matrix. Meanwhile, other two logistic models solve the separation problem by switching the problem settings. For example, $\texttt{bayesglm}$ adopts a Bayesian approach which scales the data first and then places Cauchy distribution as a prior distribution on the coefficients and $\texttt{brglm}$ modifies the score function to produce finite coefficients. As a result, not only are both models' results in inference not the best, but it is also hard to see their outputs as a true solution for separation problem of $\texttt{glm}$. In prediction, $\texttt{glmdr}$ often shows the highest out-of-sample accuracy with the narrowest length of prediction intervals with acceptable computational cost. It may take much time when we have a large number of observations, but the complete separation is likely to occur when we have a small sample size. Thus, high computational cost in large sample size should not be the major issue in $\texttt{glmdr}$.
+On the other hand, $\texttt{glmdr}$ is considered to be the most preferable logistic model based on its overall performance in the inference and prediction. The main strength of $\texttt{glmdr}$ is it provides the best inference because the way that $\texttt{glmdr}$ handles the separation problem is the true remedy to the traditional $\texttt{glm}$'s separation issue. It solves the separation issue within the maximum likelihood estimation framework unlike other two logistic models and estimates the probability of success by finding the MLE in the Barndorff-Nielsen completion [\citeyear{barndorff-nielsen_1978}] based on approximate null eigenvectors of the Fisher information matrix. Meanwhile, other two logistic models solve the separation problem by switching the problem settings. For example, $\texttt{bayesglm}$ adopts a Bayesian approach which scales the data first and then places Cauchy distribution as a prior distribution on the coefficients and $\texttt{brglm}$ modifies the score function to produce finite coefficients. As a result, not only are both models' results in inference not the best, but it is also hard to see their outputs as a true solution for separation problem of $\texttt{glm}$. In prediction, $\texttt{glmdr}$ shows better out-of-sample accuracy when the quasi-complete separation presents, and comparable performance when the complete separation exists with the narrowest length of prediction intervals with acceptable computational cost. It may take much time when we have a large number of observations, but the complete separation is likely to occur when we have a small sample size. Thus, high computational cost in large sample size should not be the major issue in $\texttt{glmdr}$.
 
 In conclusion, when separation issue present in the logistic model, one can consider using the $\texttt{glmdr}$ which has the advantage in inference and the comparable prediction power. $\texttt{bayesglm}$ is suitable for prediction in large datasets thanks to its low computational cost yet high accuracy. $\texttt{brglm}$ or $\texttt{logistf}$ may be least preferable method because they are computationally unstable and expensive.
 
