@@ -63,10 +63,10 @@ We provide inference and prediction results for the maize data as well as an ext
 \noindent\textbf{Complete separation}: We first analyze the \cite{agresti_categorical_2013} example discussed in Section~\ref{sec:complete_separation}. \\ 
 
 \noindent\textbf{Quasi-complete separation}: 
- We analyze the \cite{agresti_categorical_2013} example with two points added, a success and a failure at $x = 50$. \\
+ We analyze the \cite{agresti_categorical_2013} example with two points added, a success and a failure at $z = 50$. \\
 
 
-\noindent\textbf{Quadratic logistic regression model}: This example comes from Section 2.2 of Geyer [\citeyear{Geyer2009}]. In this example $y_i =1$ for $ 12 < x_i < 24 $ and $y_i = 0$, otherwise. In this case, maximum likelihood estimate (MLE) does not exist when we fit a quadratic logistic model using $\texttt{glm}$, and it complains that the algorithm did not converge. We demonstrate how to compute the one-sided confidence intervals for mean-value parameters for this example in the supplementary material. \\
+\noindent\textbf{Quadratic logistic regression model}: This example comes from Section 2.2 of Geyer [\citeyear{Geyer2009}]. In this example $y_i =1$ for $ 12 < z_i < 24 $ and $y_i = 0$, otherwise. In this case, maximum likelihood estimate (MLE) does not exist when we fit a quadratic logistic model using $\texttt{glm}$, and it complains that the algorithm did not converge. We demonstrate how to compute the one-sided confidence intervals for mean-value parameters for this example in the supplementary material. \\
 
 \noindent\textbf{Endometrial Cancer Study}: \cite{Heinze2002} firstly investigated the endometrial data set (n = 79), which was originally provided by Dr. Asseryanis from the Vienna University Medical School. The main purpose of this study was to describe histology of cases (HG) in terms of three risk factors: neovasculation (NV), endometrium height (EH) and pulsatility index of arteria uterina (PI). 30 patients was classified grading 0-II for histology (HG = 1) and 49 patients for grading III-IV (HG = 0). There are 13 patients who has neovasculization (NV = 1) and absent for 66 patients (NV = 0). Pulsatility index (PI) ranges from 0 to 49 with mean of 17.38 and median of 16.00, and endometirum height (EH) ranges from 0.27 to 3.61 with mean of 1.662 and median of 1.640. In this example, we observe the quasi-complete separation in NV.  \\
 
