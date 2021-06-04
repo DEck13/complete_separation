@@ -60,6 +60,7 @@ plot1 <- ggplot(data=as.data.frame(cbind(x,y)),aes(x=x,y=y)) +
   geom_point(size=3) +
   theme(panel.background = element_rect(fill = "white", colour = "grey50"))+
   scale_x_continuous(breaks = x)+
+  labs(x="z",y="y")+
   scale_y_continuous(breaks = c(0.0,1.0))
 
 plot2 <- ggplot(data=as.data.frame(cbind(x,y,mod_CI)),aes(x=x,y=y)) +
@@ -70,7 +71,7 @@ plot2 <- ggplot(data=as.data.frame(cbind(x,y,mod_CI)),aes(x=x,y=y)) +
   geom_segment(aes(x = x, y = y, xend = x, yend = lower)) +
   geom_segment(aes(x = x, y = y, xend = x, yend = upper)) +
   theme(panel.background = element_rect(fill = "white", colour = "grey50"), axis.title=element_text(size=15))+
-  labs(x="x", y= TeX('$\\textbf{\\hat{p}}$')) +
+  labs(x="z", y= TeX('$\\textbf{\\hat{p}_x}$')) +
   scale_x_continuous(breaks = x)+
   scale_y_continuous(breaks = c(0.0,1.0))
 
@@ -201,16 +202,14 @@ total_mat_linear_test <- ifelse(total_mat_linear_test<0,0,total_mat_linear_test)
 ```
 
 ```{r, eval=FALSE}
-find_cutoff(y,total_mat_glmdr_test)
-find_cutoff(y,total_mat_bayes_test)
-find_cutoff(y,total_mat_brglm_test)
-find_cutoff(y,total_mat_linear_test)
+df <- data.frame("ID"=1:8,"observed"=y,"predicted"=total_mat_glmdr_test)
+optimal.thresholds(df)
 ```
 ```{r}
 mean(as.numeric(total_mat_glmdr_test >= 0.5) == y)
-mean(as.numeric(total_mat_bayes_test >= 0.5) == y)
-mean(as.numeric(total_mat_brglm_test >= 0.5) == y)
-mean(as.numeric(total_mat_linear_test >= 0.5) == y)
+#mean(as.numeric(total_mat_bayes_test >= 0.5) == y)
+#mean(as.numeric(total_mat_brglm_test >= 0.5) == y)
+#mean(as.numeric(total_mat_linear_test >= 0.5) == y)
 ```
 
 ```{r}
@@ -232,7 +231,7 @@ ret
 
 ```{r}
 x <- c(10,20,30,40,60,70,80,90,50,50)
-y <- c(0,0,0,0,1,1,1,1,0,1)
+y <- c(0,0,0,0,1,1,1,1,1,0)
 mod1 <- glm(y~x,family="binomial")
 summary(mod1)
 plot(y~x, pch=16)
@@ -355,7 +354,7 @@ optimal.thresholds(my_dat,opt.methods = "MaxPCC")
 ```
 
 ```{r}
-mean(as.numeric(total_mat_glmdr_test >= 0.545) == y)
+mean(as.numeric(total_mat_glmdr_test >= 0.5) == y)
 mean(as.numeric(total_mat_bayes_test >= 0.5) == y)
 mean(as.numeric(total_mat_brglm_test >= 0.5) == y)
 mean(as.numeric(total_mat_linear_test >= 0.5) == y)
