@@ -39,7 +39,6 @@ my_finder <- function(flag,cur_mod,criteria,alpha){
 #'predict(mod, newdata = new_df, cirt="AICc")
 #'}
 predict.glmdr <- function(object, newdata = NULL, crit="AICc",alpha=0.05){
-  
   if(is.null(newdata)){
       return(ifelse(predict(object$om,type="response")>=0.5,1,0))
   }
@@ -58,7 +57,7 @@ predict.glmdr <- function(object, newdata = NULL, crit="AICc",alpha=0.05){
     new_0 <- new_0 <- y_idx <- NULL
     if(ncol(newdata)==1){
       new_0 <- cbind(0,newdata)
-      new_1 <- cbind(0,newdata)
+      new_1 <- cbind(1,newdata)
       colnames(new_0) <- colnames(new_1) <- names(object$om$model)
       new_0 <- rbind(object$om$model,new_0)
       new_1 <- rbind(object$om$model,new_1)
