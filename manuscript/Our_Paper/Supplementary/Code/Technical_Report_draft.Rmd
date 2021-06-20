@@ -24,21 +24,6 @@ numCores <- detectCores()
 registerDoParallel(numCores)
 ```
 
-```{r}
-find_cutoff <- function(y,pred){
-  optimal_cutoff <- max <- -1
-  for(i in c(seq(0,1,by=0.01),0.5)){
-    acc <- mean(as.numeric(pred>=i) == y)
-    if(acc >= max){
-      optimal_cutoff = i
-      max = acc
-    }
-  }
-  return(optimal_cutoff)
-}
-```
-
-
 # Agresti Complete Separation Example
 
 ## Motivation
@@ -207,17 +192,15 @@ optimal.thresholds(df)
 ```
 ```{r}
 mean(as.numeric(total_mat_glmdr_test >= 0.5) == y)
-#mean(as.numeric(total_mat_bayes_test >= 0.5) == y)
-#mean(as.numeric(total_mat_brglm_test >= 0.5) == y)
-#mean(as.numeric(total_mat_linear_test >= 0.5) == y)
+mean(as.numeric(total_mat_bayes_test >= 0.5) == y)
+mean(as.numeric(total_mat_brglm_test >= 0.5) == y)
+mean(as.numeric(total_mat_linear_test >= 0.5) == y)
 ```
 
 ```{r}
 glmdr_PI <- sum(apply(binom.confint(total_mat_glmdr_test,1,methods="wilson")[,c(5,6)],1,diff))
 bayes_PI <- sum(apply(binom.confint(total_mat_bayes_test,1,methods="wilson")[,c(5,6)],1,diff))
 brglm_PI <- sum(apply(binom.confint(total_mat_brglm_test,1,methods="wilson")[,c(5,6)],1,diff))
-total_mat_linear_test <- ifelse(total_mat_linear_test <0,0,total_mat_linear_test)
-total_mat_linear_test <- ifelse(total_mat_linear_test >1,1,total_mat_linear_test)
 linear_PI <- sum(apply(binom.confint(total_mat_linear_test,1,methods="wilson")[,c(5,6)],1,diff))
 ret <- c(glmdr_PI,bayes_PI,brglm_PI,linear_PI) / length(x)
 names(ret) <- c("glmdr","Bayesglm","brglm","linear")
@@ -278,6 +261,13 @@ lm_length <- sum(as.matrix(lm_CI) %*% c(-1,1))
 
 cbind(glmdr_length,bayes_length,brglm_length,lm_length) / sum(!glmdr_mod$linearity)
 ```
+
+```{r}
+my_dat <- data.frame(1:length(y),y,glmdr_pred,bayes_pred$fit,brglm_pred$fit,
+                     lm_pred$fit)
+optimal.thresholds(my_dat,opt.methods = "MaxPCC")
+```
+
 
 ```{r}
 mean(as.numeric(glmdr_pred >= 0.5) == y)
@@ -731,14 +721,6 @@ cbind(glmdr_length,bayes_length,logistf_length,lm_length) / sum(!glmdr_mod$linea
 ```
 
 ```{r}
-find_cutoff(dat$Kernel.color,glmdr_pred)
-find_cutoff(dat$Kernel.color,bayes_pred$fit)
-find_cutoff(dat$Kernel.color,logistif_pred)
-find_cutoff(dat$Kernel.color,lm_pred$fit)
-```
-
-
-```{r}
 mean(as.numeric(glmdr_pred >= 0.5) == dat$Kernel.color)
 mean(as.numeric(bayes_pred$fit >= 0.5) == dat$Kernel.color)
 mean(as.numeric(logistif_pred >= 0.5) == dat$Kernel.color)
@@ -807,25 +789,25 @@ total_mat_linear_test <- ifelse(total_mat_linear_test >1,1,total_mat_linear_test
 ```
 
 ```{r}
-total_mat_glmdr_test <- read.csv("../../../../../../Data/glmdr_predicted_ret.csv")[,-1]
-total_mat_bayes_test <- read.csv("../../../../../../Data/bayes_predicted_ret.csv")[,-1]
+#total_mat_glmdr_test <- read.csv("../../../../../../Data/glmdr_predicted_ret.csv")[,-1]
+#total_mat_bayes_test <- read.csv("../../../../../../Data/bayes_predicted_ret.csv")[,-1]
 total_mat_logistf_test <- read.csv("../../../../../../Data/logistf_predicted_ret.csv")[,-1]
-total_mat_linear_test <- read.csv("../../../../../../Data/linear_predicted_ret.csv")[,-1]
+#total_mat_linear_test <- read.csv("../../../../../../Data/linear_predicted_ret.csv")[,-1]
 ```
 
 
 ```{r, eval=FALSE}
-find_cutoff(dat$Kernel.color,total_mat_glmdr_test)
-find_cutoff(dat$Kernel.color,total_mat_bayes_test)
-find_cutoff(dat$Kernel.color,total_mat_logistf_test)
-find_cutoff(dat$Kernel.color,total_mat_linear_test)
+my_dat <- data.frame(1:nrow(dat),dat$Kernel.color,
+                     total_mat_glmdr_test,total_mat_bayes_test,total_mat_logistf_test,
+                     total_mat_linear_test)
+optimal.thresholds(my_dat,opt.methods = "MaxPCC")
 ```
 
 ```{r}
-mean(as.numeric(total_mat_glmdr_test >= 0.57) == dat$Kernel.color)
+mean(as.numeric(total_mat_glmdr_test >= 0.68) == dat$Kernel.color)
 mean(as.numeric(total_mat_bayes_test >= 0.62) == dat$Kernel.color)
 mean(as.numeric(total_mat_logistf_test >= 0.85) == dat$Kernel.color)
-mean(as.numeric(total_mat_linear_test >= 0.62) == dat$Kernel.color)
+mean(as.numeric(total_mat_linear_test >= 0.605) == dat$Kernel.color)
 ```
 
 ```{r}
